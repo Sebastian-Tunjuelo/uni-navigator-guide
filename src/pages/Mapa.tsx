@@ -57,8 +57,10 @@ export default function Mapa() {
     return `Cruza por ${b.shortName}`;
   });
 
+  const hasRoute = route.length > 1;
+
   return (
-    <div className="flex h-[calc(100vh-5.5rem)] flex-col">
+    <div className="flex min-h-[calc(100vh-5.5rem)] flex-col">
       <PageHeader title="Mapa del campus" subtitle="Encuentra tu camino" />
 
       {/* Selectores */}
@@ -99,7 +101,12 @@ export default function Mapa() {
       </div>
 
       {/* Mapa */}
-      <div className="relative flex-1 overflow-hidden bg-muted/40">
+      <div
+        className={cn(
+          "relative w-full overflow-hidden bg-muted/40",
+          hasRoute ? "h-[220px] flex-shrink-0" : "min-h-[360px] flex-1"
+        )}
+      >
         <svg viewBox="0 0 400 500" className="h-full w-full" preserveAspectRatio="xMidYMid meet">
           {/* Fondo del campus */}
           <rect x="10" y="10" width="380" height="480" rx="20" className="fill-background stroke-border" strokeWidth="1.5" />
@@ -171,39 +178,39 @@ export default function Mapa() {
             </>
           )}
         </svg>
-
-        {/* Tarjeta de resumen */}
-        {route.length > 1 && (
-          <div className="absolute inset-x-3 bottom-3 rounded-2xl border border-border bg-card/95 p-4 shadow-elevated backdrop-blur-md animate-fade-in">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-primary">Ruta recomendada</p>
-                <p className="mt-0.5 text-sm font-semibold">
-                  {nodeMap.get(route[0])?.shortName} → {nodeMap.get(route[route.length - 1])?.shortName}
-                </p>
-              </div>
-              <div className="flex items-center gap-3 text-xs">
-                <span className="flex items-center gap-1 rounded-full bg-primary-soft px-2 py-1 font-semibold text-primary">
-                  <Footprints className="h-3.5 w-3.5" /> {meters} m
-                </span>
-                <span className="flex items-center gap-1 rounded-full bg-success-soft px-2 py-1 font-semibold text-success">
-                  <Clock className="h-3.5 w-3.5" /> {minutes} min
-                </span>
-              </div>
-            </div>
-            <ol className="mt-3 space-y-1.5 text-xs">
-              {stepsText.map((step, i) => (
-                <li key={i} className="flex items-start gap-2">
-                  <span className="mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                    {i + 1}
-                  </span>
-                  <span className="text-foreground">{step}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
-        )}
       </div>
+
+      {/* Tarjeta de resumen (debajo del mapa, en flujo) */}
+      {hasRoute && (
+        <div className="mx-3 mt-3 mb-4 rounded-2xl border border-border bg-card p-4 shadow-card animate-fade-in">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary">Ruta recomendada</p>
+              <p className="mt-0.5 text-sm font-semibold">
+                {nodeMap.get(route[0])?.shortName} → {nodeMap.get(route[route.length - 1])?.shortName}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="flex items-center gap-1 rounded-full bg-primary-soft px-2 py-1 font-semibold text-primary">
+                <Footprints className="h-3.5 w-3.5" /> {meters} m
+              </span>
+              <span className="flex items-center gap-1 rounded-full bg-success-soft px-2 py-1 font-semibold text-success">
+                <Clock className="h-3.5 w-3.5" /> {minutes} min
+              </span>
+            </div>
+          </div>
+          <ol className="mt-3 space-y-1.5 text-xs">
+            {stepsText.map((step, i) => (
+              <li key={i} className="flex items-start gap-2">
+                <span className="mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                  {i + 1}
+                </span>
+                <span className="text-foreground">{step}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
     </div>
   );
 }
