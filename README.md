@@ -18,10 +18,11 @@
 3. [POV Problem Statement](#3-pov-problem-statement)
 4. [Ideation — Solution](#4-ideation--solution)
 5. [Low-Fidelity Prototype](#5-low-fidelity-prototype)
-6. [Evidence of AI Usage](#6-evidence-of-ai-usage)
-7. [Evidence of Iteration](#7-evidence-of-iteration)
-8. [Conclusion / Reflection](#8-conclusion--reflection)
-9. [Annexes](#9-annexes)
+6. [Architecture & Tech Stack](#6-architecture--tech-stack)
+7. [Evidence of AI Usage](#7-evidence-of-ai-usage)
+8. [Evidence of Iteration](#8-evidence-of-iteration)
+9. [Conclusion / Reflection](#9-conclusion--reflection)
+10. [Annexes](#10-annexes)
 
 ---
 
@@ -159,7 +160,66 @@ A mobile application designed to support first-semester students like Laura. It 
 
 ---
 
-## 6. Evidence of AI Usage
+## 6. Architecture & Tech Stack
+
+### Frontend
+- **Framework**: Vite + React 18 with TypeScript
+- **Styling**: Tailwind CSS + shadcn/ui
+- **State**: Context API + React Query (planned)
+- **Deployment**: Vercel/Netlify
+
+### Backend
+- **Runtime**: Node.js 18+
+- **Framework**: Express.js 5.x
+- **Database**: PostgreSQL (Supabase)
+- **Authentication**: Supabase Auth (JWT)
+- **Architecture**: Workflow-ready (Temporal-compatible)
+
+### AI & RAG (Future)
+- **LLM**: Claude/GPT-4 (via API)
+- **Embeddings**: OpenAI/HuggingFace
+- **Vector Search**: Supabase pgvector
+- **Orchestration**: LangChain + Temporal (Phase 2)
+
+### Development Stack
+- **Backend**: TypeScript, Express, Pino (logging)
+- **Testing**: Jest (planned)
+- **Monitoring**: Console logs → DataDog (production)
+- **CI/CD**: GitHub Actions (planned)
+
+### Project Structure
+```
+uni-navigator-guide/
+├── src/                    # Frontend (React + TypeScript)
+├── backend/               # Backend (Express + TypeScript)
+├── supabase/              # Database migrations and config
+├── docs/                  # Project documentation
+└── .agents/skills/        # Installed agent skills
+```
+
+### How to Run
+
+**Frontend:**
+```bash
+npm install
+npm run dev  # http://localhost:5173
+```
+
+**Backend:**
+```bash
+cd backend
+npm install
+npm run dev  # http://localhost:3001
+```
+
+**Database:**
+- Create Supabase project
+- Configure `.env` in root
+- Run migrations: Execute SQL from `supabase/migrations/`
+
+---
+
+## 7. Evidence of AI Usage
 
 > 📎 *Insert screenshots or short descriptions of how AI was used in ideation, prototyping, or testing.*
 
@@ -186,3 +246,17 @@ A mobile application designed to support first-semester students like Laura. It 
 ## 9. Annexes
 
 > 📎 *Additional materials, references, and supporting documents.*
+
+### Backend Documentation
+- [Backend README](./backend/README.md) - Setup, architecture, and development guide
+- [API Documentation](./backend/API.md) - Complete endpoint reference with examples
+- [Workflow Architecture](./backend/WORKFLOW_ARCHITECTURE.md) - How to scale to Temporal
+
+### Database
+- [SQL Migrations](./supabase/migrations/20260501_000000_create_tables.sql) - Schema definition
+
+### Project Documentation
+- [Tareas Backend](./docs/tareas-backend.md) - Backend implementation checklist
+- [Tareas RAG](./docs/tareas-rag.md) - RAG and LLM integration roadmap
+- [Tareas Mapa](./docs/tareas-mapa.md) - Campus map implementation guide
+- [AGENTS.md](./AGENTS.md) - Installed skills and recommendations
