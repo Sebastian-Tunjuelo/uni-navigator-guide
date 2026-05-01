@@ -57,8 +57,10 @@ export default function Mapa() {
     return `Cruza por ${b.shortName}`;
   });
 
+  const hasRoute = route.length > 1;
+
   return (
-    <div className="flex h-[calc(100vh-5.5rem)] flex-col">
+    <div className="flex min-h-[calc(100vh-5.5rem)] flex-col">
       <PageHeader title="Mapa del campus" subtitle="Encuentra tu camino" />
 
       {/* Selectores */}
