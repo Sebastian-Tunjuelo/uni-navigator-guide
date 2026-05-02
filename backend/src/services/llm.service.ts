@@ -16,6 +16,10 @@ export class LLMService {
     messages: ChatMessage[],
     temperature: number = 0.2
   ): Promise<string | null> {
+    if (config.gemini.apiKey) {
+      return this.generateWithGemini(messages, temperature);
+    }
+
     if (config.openai.apiKey) {
       return this.generateWithOpenAI(messages, temperature);
     }
@@ -98,6 +102,52 @@ export class LLMService {
       return String(content);
     } catch (err) {
       logger.error(`LLM: Anthropic request failed: ${err}`);
+      return null;
+    }
+  }
+
+  private static async generateWithGemini(
+    messages: ChatMessage[],
+    temperature: number
+  ): Promise<string | null> {
+    try {
+      const system = messages.find((m) => m.role === 'system')?.content || '';
+      const userMessages = messages
+        .filter((m) => m.role !== 'system')
+        .map((m) => m.content)
+        .join('\n');
+
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/${config.gemini.chatModel}:generateContent`,
+        {
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: `${system}\n\n${userMessages}` }],
+            },
+          ],
+          generationConfig: {
+            temperature,
+            maxOutputTokens: 800,
+          },
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-goog-api-key': config.gemini.apiKey,
+          },
+        }
+      );
+
+      const content = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!content) {
+        logger.warn('LLM: Gemini returned empty content');
+        return null;
+      }
+
+      return String(content);
+    } catch (err) {
+      logger.error(`LLM: Gemini request failed: ${err}`);
       return null;
     }
   }

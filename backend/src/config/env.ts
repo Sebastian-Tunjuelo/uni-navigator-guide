@@ -20,6 +20,10 @@ export const config = {
   logLevel: process.env.LOG_LEVEL || 'info',
 
   // RAG/LLM (optional)
+  gemini: {
+    apiKey: process.env.GEMINI_API_KEY || '',
+    chatModel: process.env.GEMINI_CHAT_MODEL || 'gemini-1.5-flash',
+  },
   openai: {
     apiKey: process.env.OPENAI_API_KEY || '',
     chatModel: process.env.OPENAI_CHAT_MODEL || 'gpt-4o-mini',

@@ -112,7 +112,6 @@ export class RetrieverService {
       const { data, error } = await supabase
         .from('documents')
         .select('*')
-        .textSearch('content', query)
         .limit(topK);
 
       if (error) {
@@ -121,7 +120,11 @@ export class RetrieverService {
         return this.searchDocuments(query, topK);
       }
 
-      return data || [];
+      if (data && data.length > 0) {
+        return data;
+      }
+
+      return this.searchDocuments(query, topK);
     } catch (err) {
       logger.error(`Hybrid search error: ${err}`);
       return [];
@@ -151,11 +154,13 @@ export class RAGChainService {
 
     try {
       // WORKFLOW PATTERN: Step 1 - Retrieve relevant documents
-      const documents = await RetrieverService.searchDocuments(userQuery, 5);
-      logger.info(`RAG: Retrieved ${documents.length} documents`);
+      const documents = await RetrieverService.hybridSearch(userQuery, 3);
+      const relevantDocuments = this.filterRelevantDocuments(documents, userQuery);
+      const finalDocuments = relevantDocuments.length > 0 ? relevantDocuments : documents;
+      logger.info(`RAG: Retrieved ${finalDocuments.length} documents`);
 
       // WORKFLOW PATTERN: Step 2 - Format context
-      const context = this.formatContext(documents);
+      const context = this.formatContext(finalDocuments);
 
       // WORKFLOW PATTERN: Step 3 - Generate response (placeholder)
       const answer = await this.generateResponse(userQuery, context);
@@ -163,10 +168,11 @@ export class RAGChainService {
       // WORKFLOW PATTERN: Step 4 - Return with sources
       return {
         answer,
-        sources: documents.map((doc) => ({
+        sources: finalDocuments.map((doc) => ({
           title: doc.title,
-          content: doc.content?.substring(0, 200) + '...',
+          content: doc.content ? `${doc.content.substring(0, 200)}...` : '',
           category: doc.category,
+          similarity: doc.similarity,
         })),
       };
     } catch (err) {
@@ -187,13 +193,71 @@ export class RAGChainService {
     }
 
     const formatted = documents
-      .map(
-        (doc, idx) =>
-          `[${idx + 1}] ${doc.title || 'Documento'}: ${doc.content?.substring(0, 300) || ''}`
-      )
+      .map((doc, idx) => {
+        const similarity = doc.similarity ? ` (score ${Number(doc.similarity).toFixed(2)})` : '';
+        const title = doc.title || 'Documento';
+        const content = doc.content ? doc.content.substring(0, 240) : '';
+        return `[${idx + 1}] ${title}${similarity}: ${content}`;
+      })
       .join('\n\n');
 
-    return `Información relevante:\n${formatted}`;
+    return formatted;
+  }
+
+  private static filterRelevantDocuments(documents: any[], userQuery: string): any[] {
+    if (documents.length === 0) {
+      return [];
+    }
+
+    const normalizedQuery = userQuery.toLowerCase();
+    if (normalizedQuery.includes('biblioteca')) {
+      return documents.filter((doc) => {
+        const title = String(doc.title || '').toLowerCase();
+        const content = String(doc.content || '').toLowerCase();
+        return title.includes('biblioteca') || content.includes('biblioteca');
+      });
+    }
+
+    const stopWords = new Set([
+      'donde',
+      'queda',
+      'cual',
+      'horario',
+      'como',
+      'que',
+      'para',
+      'por',
+      'una',
+      'un',
+      'la',
+      'el',
+      'los',
+      'las',
+      'de',
+      'del',
+      'y',
+      'en',
+      'su',
+    ]);
+
+    const keywords = Array.from(
+      new Set(
+        normalizedQuery
+          .split(/\s+/)
+          .map((word) => word.replace(/[^a-z0-9\u00C0-\u017F]/gi, ''))
+          .filter((word) => word.length >= 4 && !stopWords.has(word))
+      )
+    );
+
+    if (keywords.length === 0) {
+      return [];
+    }
+
+    return documents.filter((doc) => {
+      const title = String(doc.title || '').toLowerCase();
+      const content = String(doc.content || '').toLowerCase();
+      return keywords.some((keyword) => title.includes(keyword) || content.includes(keyword));
+    });
   }
 
   /**
@@ -203,8 +267,9 @@ export class RAGChainService {
     logger.info('RAG: Generating response');
 
     const systemPrompt =
-      'Eres un asistente de orientación universitaria. Responde de forma clara, breve y amigable. '
-      + 'Usa solo la información del contexto. Si no hay datos suficientes, dilo y sugiere un siguiente paso.';
+      'Eres un asistente de orientación universitaria. Responde en 2-3 frases, claro y amigable. '
+      + 'Usa solo la información del contexto, sin listar documentos ni repetir el contexto. '
+      + 'Si no hay datos suficientes, dilo y sugiere un siguiente paso.';
     const messages = [
       { role: 'system' as const, content: systemPrompt },
       {
@@ -218,12 +283,13 @@ export class RAGChainService {
       return completion;
     }
 
-    const fallback = `Basándome en la información del campus, puedo ayudarte con: "${userQuery}".
+    logger.warn('RAG: LLM unavailable, returning concise fallback');
+    const firstLine = context.split('\n').find((line) => line.trim().length > 0) || '';
+    if (firstLine) {
+      const cleaned = firstLine.replace(/^\[\d+\]\s*/, '');
+      return `${cleaned}. ¿Quieres más detalles?`;
+    }
 
-${context}
-
-¿Hay algo más específico que quieras saber?`;
-
-    return fallback;
+    return 'No encontré información suficiente sobre eso. ¿Puedes darme más contexto?';
   }
 }

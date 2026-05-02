@@ -6,9 +6,12 @@ This setup wires the chat endpoint to a simple RAG flow:
 
 ## 1) Environment
 
-Update `backend/.env.local` with your keys:
+Update `backend/.env.local` with your keys (Gemini is preferred for MVP):
 
 ```
+GEMINI_API_KEY=your-gemini-key
+GEMINI_CHAT_MODEL=gemini-1.5-flash
+# OR
 OPENAI_API_KEY=your-openai-key
 OPENAI_CHAT_MODEL=gpt-4o-mini
 OPENAI_EMBEDDING_MODEL=text-embedding-3-small
@@ -17,7 +20,7 @@ ANTHROPIC_API_KEY=your-anthropic-key
 ANTHROPIC_CHAT_MODEL=claude-3-5-sonnet-20240620
 ```
 
-The system will prefer OpenAI if both are present.
+The system will prefer Gemini, then OpenAI, then Anthropic.
 
 ## 2) Supabase Tables
 

@@ -1,0 +1,263 @@
+================================================================================
+BUSQUEDA Y DOCUMENTACION DE PATRONES - PROYECTO UNINAVIGATOR
+Fecha: 1 de mayo de 2026 | Hackathon EPAM 2026 - Challenge 3
+================================================================================
+
+ARCHIVO PRINCIPAL GENERADO:
+-> docs/PATRONES_PROYECTO.md (4.2 KB, 199 líneas)
+
+================================================================================
+PATRONES DOCUMENTADOS Y ENCONTRADOS
+================================================================================
+
+1. COMPONENTES SHADCN/UI INSTALADOS Y USADOS
+   - Total: 49 componentes
+   - Más usados: Button, Card, Select, Input, Label, Badge, Alert, Toast
+   - Patrón: CVA (Class Variance Authority) con variantes predefinidas
+   - Ejemplo: variant={default|destructive|outline|secondary|ghost|link}
+             size={default|sm|lg|icon}
+
+2. PALETA DE COLORES ACTUAL
+   - Sistema: HSL (Hue, Saturation, Lightness)
+   - Primario: Azul 222 83% 55% (universitario)
+   - Primario-soft: Azul 222 83% 96% (para fondos)
+   - Secundarios: Grises 220 15% 96% y 222 25% 12%
+   - Semánticos: Verde 152 60% 42%, Naranja 38 92% 50%, Rojo 0 75% 55%
+   - Sombras: shadow-soft, shadow-card, shadow-elevated
+   - Gradientes: gradient-primary, gradient-card (ambos 135deg)
+
+3. CONVENCIÓN DE NOMBRES Y ESTRUCTURA
+   Carpetas:
+   - src/components/ui/         -> shadcn components (NO EDITAR)
+   - src/components/layout/     -> PageHeader, MobileShell, BottomNav
+   - src/pages/                 -> Home, Mapa, Carnet, Chats, Perfil, Login
+   - src/lib/                   -> utils.ts, session.ts
+   - src/data/                  -> mock.ts, campus.ts
+   
+   Convenciones:
+   - PascalCase:  Componentes (PageHeader, MapBlock, CardItem)
+   - camelCase:   Hooks (useToast, useNavigation, useCamera)
+   - kebab-case:  Archivos (use-toast.ts, page-header.tsx)
+
+4. PATRONES DE HOOKS Y MANEJO DE ESTADO
+   React Hooks:
+   - useState()      -> Estado local (origen, destino, seleccionado)
+   - useEffect()     -> Efectos ([] = solo al montar)
+   - useMemo()       -> Memoizar cálculos costosos
+   
+   React Router:
+   - useNavigate()   -> navigate(path), navigate(-1)
+   - useLocation()   -> { pathname }
+   - useSearchParams() -> params.get(key)
+   
+   Session:
+   - getCurrentProfile()   -> Lectura de perfil
+   - setCurrentProfile(id) -> Guardar perfil
+   - clearCurrentProfile() -> Limpiar sesión
+   
+   Campus Logic:
+   - findRoute(origin, dest)  -> Dijkstra algorithm
+   - routeDistance(path)      -> Cálculo en metros
+   - walkingTime(meters)      -> Tiempo en minutos
+
+5. PATRONES DE RESPONSIVE DESIGN
+   Mobile-First: max-width 440px
+   
+   Componentes principales:
+   - MobileShell:    max-w-[440px], bg-background, pb-24
+   - PageHeader:     sticky top-0 z-20, backdrop-blur-md
+   - BottomNav:      fixed bottom-0, grid-cols-5, z-30
+   
+   Patrones comunes:
+   - space-y-6             -> Espaciado vertical
+   - px-4 py-3             -> Padding estándar
+   - gap-3                 -> Espaciado horizontal
+   - truncate / line-clamp-2 -> Control de texto
+   - flex items-center     -> Alineación vertical
+   - overflow-x-auto       -> Carruseles horizontal
+   - scrollbar-hidden      -> Sin scrollbar visible
+
+6. ANIMACIONES CSS Y TRANSICIONES
+   Keyframes disponibles:
+   - accordion-down   -> 0.2s ease-out (altura abre)
+   - accordion-up     -> 0.2s ease-out (altura cierra)
+   - fade-in          -> 0.3s ease-out (opacity + translateY)
+   - draw-route       -> 1.2s ease-out (strokeDashoffset para SVG)
+   
+   Clases de animación:
+   - animate-fade-in      -> Aparición suave
+   - transition-colors    -> Cambio de color
+   - transition-all       -> Todas las propiedades
+   - duration-300/500     -> Duración de transición
+   - ease-out/ease-in     -> Timing functions
+   - hover:scale-105      -> Transform on hover
+   - disabled:opacity-50  -> Estados deshabilitados
+   
+   Utilidades personalizadas:
+   - .scrollbar-hidden    -> Ocultar scrollbar CSS
+   - .label-eyebrow       -> Etiqueta pequeña mayúsculas
+   - .shadow-soft/card/elevated
+
+================================================================================
+CHECKLIST PARA NUEVOS COMPONENTES DEL MAPA
+================================================================================
+
+ESTRUCTURA:
+✓ Archivo: src/components/[folder]/ComponentName.tsx (PascalCase)
+✓ Props: Interface ComponentNameProps con tipos TypeScript
+✓ Export: export default function o export function (named export)
+✓ Documentación: Comentarios en componentes complejos
+
+ESTILOS:
+✓ Usar className con Tailwind CSS
+✓ Importar cn() de @/lib/utils para condicionales
+✓ Usar variables CSS de index.css para colores
+✓ Evitar CSS files (inline styles si es muy necesario)
+
+INTERACTIVIDAD:
+✓ useState() para estado local
+✓ useEffect() para efectos (dependencias bien definidas)
+✓ useNavigate/useSearchParams si necesita routing
+✓ Callbacks en props para comunicación con padre
+
+COMPONENTES SHADCN:
+✓ Button, Card (CardHeader, CardTitle, CardContent)
+✓ Select (SelectTrigger, SelectValue, SelectContent, SelectItem)
+✓ Input, Label, Badge, Alert
+✓ Seguir patterns de variantes (variant, size)
+
+RESPONSIVE:
+✓ Mobile-first approach (comenzar desde 440px)
+✓ truncate para textos largos
+✓ line-clamp-2 para múltiples líneas
+✓ gap-3, px-4, py-3 para spacing consistente
+✓ overflow-x-auto scrollbar-hidden para carruseles
+
+ANIMACIONES:
+✓ animate-fade-in para apariciones suaves
+✓ transition-colors/transition-all para cambios
+✓ duration-300 para timing consistente
+✓ ease-out para natural feel
+✓ draw-route para animaciones SVG
+
+================================================================================
+EJEMPLO FUNCIONAL BÁSICO
+================================================================================
+
+```javascript
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+
+interface MapBlockProps {
+  id: string;
+  name: string;
+  emoji: string;
+  onClick?: (id: string) => void;
+}
+
+export function MapBlock({ id, name, emoji, onClick }: MapBlockProps) {
+  const [selected, setSelected] = useState(false);
+
+  return (
+    <Card
+      className={cn(
+        "cursor-pointer transition-all animate-fade-in",
+        selected && "border-primary bg-primary-soft"
+      )}
+      onClick={() => {
+        setSelected(!selected);
+        onClick?.(id);
+      }}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">{emoji}</span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-semibold">{name}</p>
+            <p className="text-xs text-muted-foreground">{id}</p>
+          </div>
+        </div>
+        <Button className="w-full mt-3 rounded-xl">
+          Seleccionar
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+Este ejemplo demuestra:
+- useState para estado local (selected)
+- cn() para clases condicionales
+- Colores del sistema (primary, primary-soft)
+- Animación fade-in
+- Responsive design con truncate
+- Componentes shadcn/ui (Card, CardContent, Button)
+
+================================================================================
+ARCHIVOS ANALIZADOS
+================================================================================
+
+Configuración:
+- tailwind.config.ts      -> Paleta de colores, keyframes, animations
+- src/index.css           -> Variables CSS, utilidades personalizadas
+
+Componentes:
+- src/components/ui/*     -> 49 componentes shadcn instalados
+- src/components/layout/PageHeader.tsx     -> Header sticky
+- src/components/layout/MobileShell.tsx    -> Shell principal
+- src/components/layout/BottomNav.tsx      -> Navegación inferior
+
+Hooks y Utilidades:
+- src/lib/utils.ts        -> Función cn()
+- src/lib/session.ts      -> Gestión de sesión
+- src/hooks/use-toast.ts  -> Hook de notificaciones
+
+Datos y Lógica:
+- src/data/campus.ts      -> Grafo del campus con Dijkstra
+- src/data/mock.ts        -> Datos de prueba
+
+Páginas:
+- src/pages/Mapa.tsx      -> Mapa interactivo (referencia)
+- src/pages/Home.tsx      -> Página principal
+
+================================================================================
+CONCLUSIONES Y RECOMENDACIONES
+================================================================================
+
+1. COHERENCIA DE DISEÑO:
+   - Sistema de colores HSL bien definido y semántico
+   - Componentes shadcn con variantes consistentes
+   - Spacing y tamaños estandarizados
+   - Animaciones predefinidas y reutilizables
+
+2. PARA EL MAPA INTERACTIVO:
+   - Usar componentes existentes (Button, Card, Select)
+   - Seguir paleta de colores primarios y soft
+   - Aplicar animate-fade-in para apariciones
+   - Usar draw-route para animaciones SVG
+   - Mantener responsive design en 440px
+   - Implementar con useState, useEffect, useMemo
+
+3. PROXIMAMENTE:
+   - Crear MapBlock, MapControls, MapLegend
+   - Integrar con findRoute() del campus.ts
+   - Animar rutas con draw-route keyframe
+   - Agregar interactividad con onClick
+   - Mantener consistencia con BottomNav
+
+================================================================================
+DOCUMENTACIÓN LISTA PARA USAR
+================================================================================
+
+Referencia completa: docs/PATRONES_PROYECTO.md
+Ejemplos funcionales: Ver archivo generado
+Checklist: Usar para nuevos componentes
+Colores: Variables CSS en index.css
+Animaciones: tailwind.config.ts
+
+¡El proyecto tiene una base sólida de patrones para mantener coherencia!
+
+================================================================================
