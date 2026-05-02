@@ -13,33 +13,35 @@ export class EmbeddingsService {
    * Embed a single text
    */
   static async embedText(text: string): Promise<number[] | null> {
-    if (!config.openai.apiKey) {
-      logger.warn('Embeddings: No API key configured, returning null');
+    if (!config.gemini.apiKey) {
+      logger.warn('Embeddings: No GEMINI_API_KEY configured, returning null');
       return null;
     }
 
     try {
+      const model = 'gemini-embedding-001';
       const response = await axios.post(
-        'https://api.openai.com/v1/embeddings',
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:embedContent`,
         {
-          input: text,
-          model: config.openai.embeddingModel,
+          model: `models/${model}`,
+          content: { parts: [{ text }] },
+          outputDimensionality: 768,  // reducido para compatibilidad con HNSW (max 2000 dims)
         },
         {
           headers: {
-            Authorization: `Bearer ${config.openai.apiKey}`,
             'Content-Type': 'application/json',
+            'X-goog-api-key': config.gemini.apiKey,
           },
         }
       );
 
-      const embedding = response.data?.data?.[0]?.embedding;
-      if (!embedding) {
-        logger.warn('Embeddings: Empty embedding response');
+      const embedding = response.data?.embedding?.values;
+      if (!embedding || !Array.isArray(embedding)) {
+        logger.warn('Embeddings: Empty embedding response from Gemini');
         return null;
       }
 
-      return embedding;
+      return embedding as number[];
     } catch (err) {
       logger.error(`Embeddings error: ${err}`);
       return null;

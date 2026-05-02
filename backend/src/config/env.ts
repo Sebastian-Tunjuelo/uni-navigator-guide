@@ -24,14 +24,9 @@ export const config = {
     apiKey: process.env.GEMINI_API_KEY || '',
     chatModel: process.env.GEMINI_CHAT_MODEL || 'gemini-1.5-flash',
   },
-  openai: {
-    apiKey: process.env.OPENAI_API_KEY || '',
-    chatModel: process.env.OPENAI_CHAT_MODEL || 'gpt-4o-mini',
-    embeddingModel: process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small',
-  },
-  anthropic: {
-    apiKey: process.env.ANTHROPIC_API_KEY || '',
-    chatModel: process.env.ANTHROPIC_CHAT_MODEL || 'claude-3-5-sonnet-20240620',
+  groq: {
+    apiKey: process.env.GROQ_API_KEY || '',
+    chatModel: process.env.GROQ_CHAT_MODEL || 'llama-3.3-70b-versatile',
   },
 };
 

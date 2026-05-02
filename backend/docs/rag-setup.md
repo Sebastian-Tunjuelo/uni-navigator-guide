@@ -1,80 +1,113 @@
-# RAG Setup (Backend)
+# RAG Setup — UniBot Campus Guide
 
-This setup wires the chat endpoint to a simple RAG flow:
-- Retrieve from Supabase table `documents` (with optional pgvector RPC)
-- Generate with OpenAI or Anthropic
+## Stack
+- **Embeddings**: Gemini `gemini-embedding-001` (3072 dims)
+- **Vector DB**: Supabase + pgvector
+- **LLM**: Gemini `gemini-2.5-flash` (primary) / Groq `llama-3.3-70b-versatile` (fallback)
 
-## 1) Environment
+---
 
-Update `backend/.env.local` with your keys (Gemini is preferred for MVP):
+## Paso 1 — Ejecutar SQL en Supabase
 
-```
-GEMINI_API_KEY=your-gemini-key
-GEMINI_CHAT_MODEL=gemini-1.5-flash
-# OR
-OPENAI_API_KEY=your-openai-key
-OPENAI_CHAT_MODEL=gpt-4o-mini
-OPENAI_EMBEDDING_MODEL=text-embedding-3-small
-# OR
-ANTHROPIC_API_KEY=your-anthropic-key
-ANTHROPIC_CHAT_MODEL=claude-3-5-sonnet-20240620
-```
+1. Abre [Supabase Dashboard](https://supabase.com/dashboard) → tu proyecto
+2. Ve a **SQL Editor**
+3. Copia y ejecuta el contenido de `backend/data/supabase-setup.sql`
 
-The system will prefer Gemini, then OpenAI, then Anthropic.
+Esto crea:
+- Extensión `pgvector`
+- Tabla `documents` con columna `embedding vector(3072)`
+- Índice HNSW para búsqueda semántica rápida
+- Función `match_documents()` para similarity search
 
-## 2) Supabase Tables
+---
 
-Create a `documents` table. Minimal columns used by the API:
+## Paso 2 — Agregar Service Role Key
 
-- `id` (uuid)
-- `title` (text)
-- `content` (text)
-- `category` (text, optional)
-- `embedding` (vector, optional if using pgvector)
+La ingestión necesita permisos de escritura. El `anon key` no puede insertar con RLS activo.
 
-## 3) Optional pgvector RPC
+1. En Supabase Dashboard → **Project Settings** → **API**
+2. Copia la **service_role** key (la que dice "secret")
+3. Agrégala a `backend/.env.local`:
 
-If you enable pgvector, add an RPC function:
-
-```
-create or replace function match_documents(
-  query_embedding vector(1536),
-  match_count int
-)
-returns table (
-  id uuid,
-  title text,
-  content text,
-  category text,
-  similarity float
-)
-language sql stable
-as $$
-  select
-    documents.id,
-    documents.title,
-    documents.content,
-    documents.category,
-    1 - (documents.embedding <=> query_embedding) as similarity
-  from documents
-  order by documents.embedding <=> query_embedding
-  limit match_count;
-$$;
+```env
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
-If `match_documents` is missing, the code falls back to simple `.select()`.
+> ⚠️ Esta key tiene acceso total a la base de datos. Nunca la expongas al frontend ni la subas a Git.
 
-## 4) Run backend
+---
+
+## Paso 3 — Generar el PDF del campus
+
+```bash
+cd backend
+npm run generate:pdf
+```
+
+Genera `backend/data/campus-guide.pdf` con información inventada del campus UNTI.
+
+---
+
+## Paso 4 — Ingestar el PDF
+
+```bash
+cd backend
+npm run ingest:pdf
+```
+
+El script:
+1. Lee `data/campus-guide.pdf`
+2. Divide el texto en 18 chunks (~600 chars con 100 de overlap)
+3. Genera embeddings con Gemini `gemini-embedding-001` (3072 dims)
+4. Inserta cada chunk en la tabla `documents` de Supabase con su embedding y categoría
+
+Salida esperada:
+```
+🚀 Iniciando ingestión del PDF del campus...
+📄 PDF leído: ~9000 caracteres
+✂️  Dividido en 18 chunks
+🗑️  Limpiando documentos anteriores...
+[1/18] Embeddiendo: "Guía del Campus Universitario..."  ✅
+[2/18] Embeddiendo: "cafeterías, una biblioteca..."  ✅
+...
+📊 Resultado:
+   ✅ Insertados: 18
+   ❌ Errores:    0
+```
+
+---
+
+## Cómo funciona el RAG en el chatbot
 
 ```
-npm install
-npm run dev
+Usuario: "¿Dónde está la biblioteca?"
+         ↓
+EmbeddingsService.embedText(query)  →  vector[3072]
+         ↓
+RetrieverService.searchDocuments()  →  match_documents() en Supabase
+         ↓
+Top 3 chunks más similares semánticamente
+         ↓
+RAGChainService.generateResponse()  →  Gemini con contexto
+         ↓
+"La Biblioteca Central está entre los bloques A y C..."
 ```
 
-Chat endpoint: `POST /api/chat/message` (protected)
+---
 
-## 5) Notes
+## Re-ingestión
 
-- `backend/src/services/rag.service.ts` handles retrieval and generation.
-- `backend/src/services/llm.service.ts` handles OpenAI/Anthropic calls.
-- `backend/src/routes/chat.ts` now uses RAG for chat replies.
+Si modificas el PDF o quieres actualizar el contenido:
+
+```bash
+npm run generate:pdf   # regenera el PDF
+npm run ingest:pdf     # limpia los anteriores e inserta los nuevos
+```
+
+El script borra automáticamente los documentos con `source = 'campus-guide.pdf'` antes de insertar.
+
+---
+
+## Agregar más PDFs
+
+Para ingestar otro PDF, modifica `ingest-pdf.ts` cambiando `PDF_PATH` o crea un nuevo script que llame a las mismas funciones con una ruta diferente.

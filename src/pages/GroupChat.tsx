@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Send, Users } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { getCurrentProfile } from "@/lib/session";
 import { profiles } from "@/data/mock";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 
 interface Message {
   id: string;
@@ -16,74 +14,53 @@ interface Message {
   created_at: string;
 }
 
+// Mensajes iniciales de demo para simular una conversación activa
+const SEED_MESSAGES: Message[] = profiles.flatMap((p, pi) =>
+  [
+    { text: "¡Hola a todos! ¿Alguien sabe dónde queda el laboratorio de cómputo?", offset: 60 },
+    { text: "Está en el edificio B, segundo piso. ¡Bienvenidos!", offset: 55 },
+    { text: "Gracias 😊 ¿A qué hora abre?", offset: 50 },
+    { text: "Desde las 7am hasta las 9pm de lunes a viernes.", offset: 45 },
+  ].slice(pi, pi + 1).map((m, i) => ({
+    id: `seed-${pi}-${i}`,
+    sender_id: p.id,
+    sender_name: p.name,
+    sender_avatar: p.initials,
+    content: m.text,
+    created_at: new Date(Date.now() - m.offset * 60_000).toISOString(),
+  }))
+);
+
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" });
 }
 
 export default function GroupChat() {
   const me = getCurrentProfile()!;
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(SEED_MESSAGES);
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  // Carga inicial + realtime
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      const { data, error } = await supabase
-        .from("group_messages")
-        .select("*")
-        .order("created_at", { ascending: true })
-        .limit(200);
-      if (error) {
-        console.error(error);
-        return;
-      }
-      if (active && data) setMessages(data as Message[]);
-    })();
-
-    const channel = supabase
-      .channel("group_messages")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "group_messages" },
-        (payload) => {
-          setMessages((prev) => {
-            if (prev.find(m => m.id === (payload.new as Message).id)) return prev;
-            return [...prev, payload.new as Message];
-          });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      active = false;
-      supabase.removeChannel(channel);
-    };
-  }, []);
 
   // Autoscroll
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  const send = async () => {
+  const send = () => {
     const text = input.trim();
-    if (!text || loading) return;
-    setLoading(true);
+    if (!text) return;
     setInput("");
-    const { error } = await supabase.from("group_messages").insert({
-      sender_id: me.id,
-      sender_name: me.name,
-      sender_avatar: me.initials,
-      content: text,
-    });
-    if (error) {
-      toast.error("No se pudo enviar el mensaje");
-      setInput(text);
-    }
-    setLoading(false);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `msg-${Date.now()}`,
+        sender_id: me.id,
+        sender_name: me.name,
+        sender_avatar: me.initials,
+        content: text,
+        created_at: new Date().toISOString(),
+      },
+    ]);
   };
 
   return (
@@ -155,7 +132,7 @@ export default function GroupChat() {
         />
         <button
           type="submit"
-          disabled={!input.trim() || loading}
+          disabled={!input.trim()}
           className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-soft transition-opacity disabled:opacity-40"
           aria-label="Enviar"
         >
