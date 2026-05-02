@@ -1,28 +1,37 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Bell, MapPin, ChevronRight, Clock, Calendar } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { getCurrentProfile } from "@/lib/session";
-import { todayClasses, news, subjects } from "@/data/mock";
+import { useSubjects } from "@/features/academics/hooks/useSubjects";
+import { useTodayClasses } from "@/features/academics/hooks/useTodayClasses";
+import type { ClassEntry } from "@/features/academics/schemas";
+import { useNews } from "@/features/news/hooks/useNews";
+import { useCurrentProfile } from "@/features/profile/hooks/useCurrentProfile";
 import { cn } from "@/lib/utils";
 
 const dayNames = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 
-function getNextClass() {
+function getNextClass(classes: ClassEntry[]) {
+  if (classes.length === 0) return null;
   const now = new Date();
   const minutes = now.getHours() * 60 + now.getMinutes();
-  const upcoming = todayClasses.find(c => {
+  const upcoming = classes.find(c => {
     const [h, m] = c.start.split(":").map(Number);
     return h * 60 + m >= minutes;
   });
-  return upcoming || todayClasses[0];
+  return upcoming || classes[0];
 }
 
 export default function Home() {
-  const profile = getCurrentProfile()!;
+  const { data: profile } = useCurrentProfile();
+  const { data: todayClasses = [] } = useTodayClasses();
+  const { data: subjects = [] } = useSubjects();
+  const { data: news = [] } = useNews();
   const navigate = useNavigate();
-  const next = getNextClass();
+  const next = getNextClass(todayClasses);
   const today = new Date();
   const dateLabel = `${dayNames[today.getDay()]} ${today.getDate()} de ${today.toLocaleString("es", { month: "long" })}`;
+
+  if (!profile) return null;
 
   return (
     <div>
@@ -39,28 +48,30 @@ export default function Home() {
 
       <div className="space-y-6 px-4 py-5">
         {/* Próxima clase */}
-        <section className="animate-fade-in">
-          <p className="label-eyebrow mb-2 px-1">Tu próxima clase</p>
-          <div className="overflow-hidden rounded-3xl bg-gradient-card p-5 text-primary-foreground shadow-elevated">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-xs font-medium opacity-80">{next.start} – {next.end}</p>
-                <h2 className="mt-1 text-xl font-bold leading-tight">{next.subject}</h2>
-                <p className="mt-1 text-sm opacity-90">{next.room} · {next.block === "B" ? "Bloque B" : next.block === "C" ? "Bloque C" : next.block === "A" ? "Bloque A" : "Bloque D"}</p>
+        {next && (
+          <section className="animate-fade-in">
+            <p className="label-eyebrow mb-2 px-1">Tu próxima clase</p>
+            <div className="overflow-hidden rounded-3xl bg-gradient-card p-5 text-primary-foreground shadow-elevated">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-medium opacity-80">{next.start} – {next.end}</p>
+                  <h2 className="mt-1 text-xl font-bold leading-tight">{next.subject}</h2>
+                  <p className="mt-1 text-sm opacity-90">{next.room} · {next.block === "B" ? "Bloque B" : next.block === "C" ? "Bloque C" : next.block === "A" ? "Bloque A" : "Bloque D"}</p>
+                </div>
+                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-white/15">
+                  <Clock className="h-6 w-6" />
+                </div>
               </div>
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-white/15">
-                <Clock className="h-6 w-6" />
-              </div>
+              <button
+                onClick={() => navigate(`/mapa?to=${next.block}`)}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-white/15 py-2.5 text-sm font-semibold backdrop-blur-sm transition-colors hover:bg-white/25"
+              >
+                <MapPin className="h-4 w-4" />
+                Cómo llegar
+              </button>
             </div>
-            <button
-              onClick={() => navigate(`/mapa?to=${next.block}`)}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-white/15 py-2.5 text-sm font-semibold backdrop-blur-sm transition-colors hover:bg-white/25"
-            >
-              <MapPin className="h-4 w-4" />
-              Cómo llegar
-            </button>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* Horario de hoy */}
         <section>

@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      class_sessions: {
+        Row: {
+          block: string
+          color: string
+          day: number
+          end_time: string
+          id: string
+          room: string
+          start_time: string
+          subject: string
+        }
+        Insert: {
+          block: string
+          color: string
+          day: number
+          end_time: string
+          id: string
+          room: string
+          start_time: string
+          subject: string
+        }
+        Update: {
+          block?: string
+          color?: string
+          day?: number
+          end_time?: string
+          id?: string
+          room?: string
+          start_time?: string
+          subject?: string
+        }
+        Relationships: []
+      }
       group_messages: {
         Row: {
           content: string
@@ -38,6 +71,134 @@ export type Database = {
           sender_avatar?: string | null
           sender_id?: string
           sender_name?: string
+        }
+        Relationships: []
+      }
+      news_items: {
+        Row: {
+          category: string
+          date_label: string
+          emoji: string
+          excerpt: string
+          id: string
+          published_at: string
+          title: string
+        }
+        Insert: {
+          category: string
+          date_label: string
+          emoji: string
+          excerpt: string
+          id: string
+          published_at?: string
+          title: string
+        }
+        Update: {
+          category?: string
+          date_label?: string
+          emoji?: string
+          excerpt?: string
+          id?: string
+          published_at?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_color: string
+          code: string
+          created_at: string
+          email: string
+          id: string
+          initials: string
+          name: string
+          program: string
+          semester: number
+          valid_until: string
+        }
+        Insert: {
+          avatar_color: string
+          code: string
+          created_at?: string
+          email: string
+          id: string
+          initials: string
+          name: string
+          program: string
+          semester: number
+          valid_until: string
+        }
+        Update: {
+          avatar_color?: string
+          code?: string
+          created_at?: string
+          email?: string
+          id?: string
+          initials?: string
+          name?: string
+          program?: string
+          semester?: number
+          valid_until?: string
+        }
+        Relationships: []
+      }
+      subject_activities: {
+        Row: {
+          display_order: number
+          grade: number | null
+          id: string
+          name: string
+          subject_id: string
+          weight: number
+        }
+        Insert: {
+          display_order?: number
+          grade?: number | null
+          id?: string
+          name: string
+          subject_id: string
+          weight: number
+        }
+        Update: {
+          display_order?: number
+          grade?: number | null
+          id?: string
+          name?: string
+          subject_id?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subject_activities_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subjects: {
+        Row: {
+          created_at: string
+          current_grade: number
+          id: string
+          name: string
+          teacher: string
+        }
+        Insert: {
+          created_at?: string
+          current_grade: number
+          id: string
+          name: string
+          teacher: string
+        }
+        Update: {
+          created_at?: string
+          current_grade?: number
+          id?: string
+          name?: string
+          teacher?: string
         }
         Relationships: []
       }

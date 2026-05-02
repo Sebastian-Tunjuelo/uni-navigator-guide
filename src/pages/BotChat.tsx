@@ -1,21 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Bot, Send, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { faqResponses, faqSuggestions } from "@/data/mock";
+import { getBotAnswer } from "@/features/bot/api/botRepository";
+import { useFaqSuggestions } from "@/features/bot/hooks/useFaqSuggestions";
 import { cn } from "@/lib/utils";
 
 interface Msg {
   id: string;
   role: "bot" | "user";
   content: string;
-}
-
-function answerFor(q: string): string {
-  const lower = q.toLowerCase();
-  for (const r of faqResponses) {
-    if (r.keywords.some(k => lower.includes(k))) return r.answer;
-  }
-  return "🤔 No tengo una respuesta exacta para eso, pero puedes preguntar en el chat grupal o escribir a **secretaria@uni.edu**. También puedo ayudarte con: biblioteca, cafetería, certificados, wifi, matrícula, horarios o ubicaciones.";
 }
 
 // Render simple de **negrita** en texto
@@ -29,6 +22,7 @@ function renderBold(text: string) {
 }
 
 export default function BotChat() {
+  const { data: faqSuggestions = [] } = useFaqSuggestions();
   const [messages, setMessages] = useState<Msg[]>([
     { id: "init", role: "bot", content: "¡Hola! 👋 Soy **UniBot**, tu asistente. Pregúntame lo que quieras sobre la universidad." },
   ]);
@@ -47,7 +41,7 @@ export default function BotChat() {
     setInput("");
     setTyping(true);
     setTimeout(() => {
-      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: "bot", content: answerFor(text) }]);
+      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: "bot", content: getBotAnswer(text) }]);
       setTyping(false);
     }, 700 + Math.random() * 500);
   };

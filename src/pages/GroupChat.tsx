@@ -1,90 +1,74 @@
 import { useEffect, useRef, useState } from "react";
 import { Send, Users } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { getCurrentProfile } from "@/lib/session";
-import { profiles } from "@/data/mock";
+import { useGroupMessages } from "@/features/chat/hooks/useGroupMessages";
+import { useCurrentProfile } from "@/features/profile/hooks/useCurrentProfile";
+import { useProfiles } from "@/features/profile/hooks/useProfiles";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-
-interface Message {
-  id: string;
-  sender_id: string;
-  sender_name: string;
-  sender_avatar: string | null;
-  content: string;
-  created_at: string;
-}
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" });
 }
 
 export default function GroupChat() {
-  const me = getCurrentProfile()!;
-  const [messages, setMessages] = useState<Message[]>([]);
+  const { data: me } = useCurrentProfile();
+  const { data: profiles = [] } = useProfiles();
+  const {
+    messages,
+    fetchOlderMessages,
+    hasOlderMessages,
+    isFetchingOlderMessages,
+    sendMessage,
+    isSending,
+  } = useGroupMessages();
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [shouldStickToBottom, setShouldStickToBottom] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  // Carga inicial + realtime
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      const { data, error } = await supabase
-        .from("group_messages")
-        .select("*")
-        .order("created_at", { ascending: true })
-        .limit(200);
-      if (error) {
-        console.error(error);
-        return;
-      }
-      if (active && data) setMessages(data as Message[]);
-    })();
-
-    const channel = supabase
-      .channel("group_messages")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "group_messages" },
-        (payload) => {
-          setMessages((prev) => {
-            if (prev.find(m => m.id === (payload.new as Message).id)) return prev;
-            return [...prev, payload.new as Message];
-          });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      active = false;
-      supabase.removeChannel(channel);
-    };
-  }, []);
+  const previousScrollHeight = useRef(0);
 
   // Autoscroll
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages]);
+    const container = scrollRef.current;
+    if (!container) return;
+
+    if (shouldStickToBottom) {
+      container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+      return;
+    }
+
+    const diff = container.scrollHeight - previousScrollHeight.current;
+    container.scrollTop = diff;
+    setShouldStickToBottom(true);
+  }, [messages, shouldStickToBottom]);
+
+  const loadOlderMessages = async () => {
+    const container = scrollRef.current;
+    if (!container || !hasOlderMessages || isFetchingOlderMessages) return;
+    previousScrollHeight.current = container.scrollHeight;
+    setShouldStickToBottom(false);
+    await fetchOlderMessages();
+  };
 
   const send = async () => {
     const text = input.trim();
-    if (!text || loading) return;
-    setLoading(true);
+    if (!me || !text || isSending) return;
     setInput("");
-    const { error } = await supabase.from("group_messages").insert({
-      sender_id: me.id,
-      sender_name: me.name,
-      sender_avatar: me.initials,
-      content: text,
-    });
-    if (error) {
+    try {
+      await sendMessage({
+        senderId: me.id,
+        senderName: me.name,
+        senderAvatar: me.initials,
+        content: text,
+      });
+    } catch (error) {
+      console.error(error);
       toast.error("No se pudo enviar el mensaje");
       setInput(text);
     }
-    setLoading(false);
   };
+
+  if (!me) return null;
 
   return (
     <div className="flex h-[calc(100vh-5.5rem)] flex-col">
@@ -111,35 +95,49 @@ export default function GroupChat() {
             </p>
           </div>
         ) : (
-          <ul className="space-y-2">
-            {messages.map((m, i) => {
-              const mine = m.sender_id === me.id;
-              const showName = !mine && (i === 0 || messages[i - 1].sender_id !== m.sender_id);
-              return (
-                <li key={m.id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
-                  <div className={cn(
-                    "max-w-[78%] rounded-2xl px-3 py-2 text-sm shadow-soft",
-                    mine
-                      ? "rounded-br-md bg-primary text-primary-foreground"
-                      : "rounded-bl-md bg-card text-card-foreground"
-                  )}>
-                    {showName && (
-                      <p className="mb-0.5 text-[11px] font-semibold text-primary">
-                        {m.sender_name}
-                      </p>
-                    )}
-                    <p className="whitespace-pre-wrap break-words">{m.content}</p>
-                    <p className={cn(
-                      "mt-1 text-right text-[10px]",
-                      mine ? "text-primary-foreground/70" : "text-muted-foreground"
+          <>
+            {hasOlderMessages && (
+              <div className="mb-3 flex justify-center">
+                <button
+                  type="button"
+                  onClick={loadOlderMessages}
+                  disabled={isFetchingOlderMessages}
+                  className="rounded-full bg-background px-3 py-1.5 text-xs font-semibold text-primary shadow-soft disabled:opacity-50"
+                >
+                  {isFetchingOlderMessages ? "Cargando..." : "Cargar anteriores"}
+                </button>
+              </div>
+            )}
+            <ul className="space-y-2">
+              {messages.map((m, i) => {
+                const mine = m.sender_id === me.id;
+                const showName = !mine && (i === 0 || messages[i - 1].sender_id !== m.sender_id);
+                return (
+                  <li key={m.id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
+                    <div className={cn(
+                      "max-w-[78%] rounded-2xl px-3 py-2 text-sm shadow-soft",
+                      mine
+                        ? "rounded-br-md bg-primary text-primary-foreground"
+                        : "rounded-bl-md bg-card text-card-foreground"
                     )}>
-                      {formatTime(m.created_at)}
-                    </p>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+                      {showName && (
+                        <p className="mb-0.5 text-[11px] font-semibold text-primary">
+                          {m.sender_name}
+                        </p>
+                      )}
+                      <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                      <p className={cn(
+                        "mt-1 text-right text-[10px]",
+                        mine ? "text-primary-foreground/70" : "text-muted-foreground"
+                      )}>
+                        {formatTime(m.created_at)}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
         )}
       </div>
 
@@ -155,7 +153,7 @@ export default function GroupChat() {
         />
         <button
           type="submit"
-          disabled={!input.trim() || loading}
+          disabled={!input.trim() || isSending}
           className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-soft transition-opacity disabled:opacity-40"
           aria-label="Enviar"
         >

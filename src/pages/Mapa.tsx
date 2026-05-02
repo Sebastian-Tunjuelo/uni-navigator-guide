@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Navigation, MapPin, Footprints, Clock } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { blocks, edges, findRoute, routeDistance, walkingTime, type CampusBlock } from "@/data/campus";
+import { findRoute, routeDistance, walkingTime } from "@/features/campus-map/pathfinding";
+import { useCampusMap } from "@/features/campus-map/hooks/useCampusMap";
+import type { CampusBlock } from "@/features/campus-map/types";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -25,6 +27,8 @@ const typeColors: Record<CampusBlock["type"], string> = {
 
 export default function Mapa() {
   const [params] = useSearchParams();
+  const { data: campusMap = { blocks: [], edges: [] } } = useCampusMap();
+  const { blocks, edges } = campusMap;
   const [origin, setOrigin] = useState<string>("ENT");
   const [dest, setDest] = useState<string>(params.get("to") || "D");
   const [route, setRoute] = useState<string[]>([]);

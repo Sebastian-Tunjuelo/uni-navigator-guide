@@ -2,12 +2,15 @@ import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { Maximize2, X, ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { getCurrentProfile } from "@/lib/session";
+import { useCurrentProfile } from "@/features/profile/hooks/useCurrentProfile";
 import { cn } from "@/lib/utils";
 
 export default function Carnet() {
-  const profile = getCurrentProfile()!;
+  const { data: profile } = useCurrentProfile();
   const [zoom, setZoom] = useState(false);
+
+  if (!profile) return null;
+
   const qrValue = JSON.stringify({
     id: profile.id,
     code: profile.code,

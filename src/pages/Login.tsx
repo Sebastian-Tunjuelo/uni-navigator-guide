@@ -1,17 +1,20 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GraduationCap, ChevronRight, Sparkles } from "lucide-react";
-import { profiles } from "@/data/mock";
-import { setCurrentProfile } from "@/lib/session";
+import { setCurrentProfile } from "@/features/profile/session";
+import { useProfiles } from "@/features/profile/hooks/useProfiles";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export default function Login() {
   const navigate = useNavigate();
-  const [selected, setSelected] = useState<string>(profiles[0].id);
+  const { data: profiles = [] } = useProfiles();
+  const [selected, setSelected] = useState<string>("");
+  const selectedProfileId = selected || profiles[0]?.id || "";
 
   const handleEnter = () => {
-    setCurrentProfile(selected);
+    if (!selectedProfileId) return;
+    setCurrentProfile(selectedProfileId);
     navigate("/", { replace: true });
   };
 
@@ -40,7 +43,7 @@ export default function Login() {
           <p className="label-eyebrow px-1">Selecciona tu perfil</p>
           <div className="space-y-2">
             {profiles.map((p) => {
-              const active = selected === p.id;
+              const active = selectedProfileId === p.id;
               return (
                 <button
                   key={p.id}
@@ -92,7 +95,11 @@ export default function Login() {
             <ChevronRight className="ml-1 h-5 w-5" />
           </Button>
           <button
-            onClick={() => { setCurrentProfile(profiles[0].id); navigate("/", { replace: true }); }}
+            onClick={() => {
+              if (!profiles[0]) return;
+              setCurrentProfile(profiles[0].id);
+              navigate("/", { replace: true });
+            }}
             className="mt-3 w-full text-center text-sm text-muted-foreground hover:text-foreground"
           >
             Continuar como invitado

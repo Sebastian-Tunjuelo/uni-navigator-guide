@@ -1,18 +1,18 @@
 import { useParams, Navigate } from "react-router-dom";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { subjects } from "@/data/mock";
+import { getGradeSummary } from "@/features/academics/gradeSummary";
+import { useSubject } from "@/features/academics/hooks/useSubject";
 import { cn } from "@/lib/utils";
 import { CheckCircle2, Circle } from "lucide-react";
 
 export default function SubjectDetail() {
   const { id } = useParams();
-  const subject = subjects.find(s => s.id === id);
+  const { data: subject, isLoading } = useSubject(id);
+
+  if (isLoading) return null;
   if (!subject) return <Navigate to="/" replace />;
 
-  const completed = subject.activities.filter(a => a.grade !== null);
-  const earned = completed.reduce((acc, a) => acc + (a.grade! * a.weight) / 100, 0);
-  const completedWeight = completed.reduce((acc, a) => acc + a.weight, 0);
-  const passing = subject.current >= 3.0;
+  const { completedWeight, earned, isPassing, pendingWeight } = getGradeSummary(subject);
 
   return (
     <div>
@@ -26,8 +26,8 @@ export default function SubjectDetail() {
             <span className="mb-1 text-sm opacity-80">/ 5.0</span>
           </div>
           <div className="mt-3 flex items-center gap-2 text-xs opacity-90">
-            <span className={cn("h-2 w-2 rounded-full", passing ? "bg-success" : "bg-warning")} />
-            <span>{passing ? "Aprobando" : "En riesgo"} · {completedWeight}% evaluado</span>
+            <span className={cn("h-2 w-2 rounded-full", isPassing ? "bg-success" : "bg-warning")} />
+            <span>{isPassing ? "Aprobando" : "En riesgo"} · {completedWeight}% evaluado</span>
           </div>
         </div>
 
@@ -67,7 +67,7 @@ export default function SubjectDetail() {
 
         <div className="rounded-2xl border border-border bg-muted/50 p-4">
           <p className="text-xs text-muted-foreground">
-            <strong className="text-foreground">Nota acumulada actual:</strong> {earned.toFixed(2)} de {completedWeight} puntos posibles. Faltan por evaluar {100 - completedWeight}% del curso.
+            <strong className="text-foreground">Nota acumulada actual:</strong> {earned.toFixed(2)} de {completedWeight} puntos posibles. Faltan por evaluar {pendingWeight}% del curso.
           </p>
         </div>
       </div>

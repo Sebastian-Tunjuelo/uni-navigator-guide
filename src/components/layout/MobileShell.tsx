@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Outlet, useLocation, Navigate } from "react-router-dom";
 import { BottomNav } from "./BottomNav";
-import { getCurrentProfile } from "@/lib/session";
+import { getCurrentProfile } from "@/features/profile/session";
 
 export function MobileShell({ children }: { children?: ReactNode }) {
   const location = useLocation();

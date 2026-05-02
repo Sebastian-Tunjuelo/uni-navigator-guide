@@ -1,21 +1,22 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { lazy, Suspense } from "react";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { MobileShell } from "@/components/layout/MobileShell";
-import Login from "./pages/Login";
-import Home from "./pages/Home";
-import SubjectDetail from "./pages/SubjectDetail";
-import Carnet from "./pages/Carnet";
-import Mapa from "./pages/Mapa";
-import Chats from "./pages/Chats";
-import GroupChat from "./pages/GroupChat";
-import BotChat from "./pages/BotChat";
-import Perfil from "./pages/Perfil";
-import NotFound from "./pages/NotFound";
+import { queryClient } from "@/lib/queryClient";
 
-const queryClient = new QueryClient();
+const Login = lazy(() => import("./pages/Login"));
+const Home = lazy(() => import("./pages/Home"));
+const SubjectDetail = lazy(() => import("./pages/SubjectDetail"));
+const Carnet = lazy(() => import("./pages/Carnet"));
+const Mapa = lazy(() => import("./pages/Mapa"));
+const Chats = lazy(() => import("./pages/Chats"));
+const GroupChat = lazy(() => import("./pages/GroupChat"));
+const BotChat = lazy(() => import("./pages/BotChat"));
+const Perfil = lazy(() => import("./pages/Perfil"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -23,20 +24,22 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route element={<MobileShell />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/asignatura/:id" element={<SubjectDetail />} />
-            <Route path="/carnet" element={<Carnet />} />
-            <Route path="/mapa" element={<Mapa />} />
-            <Route path="/chats" element={<Chats />} />
-            <Route path="/chats/grupo" element={<GroupChat />} />
-            <Route path="/chats/bot" element={<BotChat />} />
-            <Route path="/perfil" element={<Perfil />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense fallback={<div className="min-h-screen bg-background" />}>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route element={<MobileShell />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/asignatura/:id" element={<SubjectDetail />} />
+              <Route path="/carnet" element={<Carnet />} />
+              <Route path="/mapa" element={<Mapa />} />
+              <Route path="/chats" element={<Chats />} />
+              <Route path="/chats/grupo" element={<GroupChat />} />
+              <Route path="/chats/bot" element={<BotChat />} />
+              <Route path="/perfil" element={<Perfil />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

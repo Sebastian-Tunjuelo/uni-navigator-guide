@@ -1,18 +1,21 @@
 import { useNavigate } from "react-router-dom";
-import { LogOut, RefreshCw, Bell, Moon, ShieldCheck, ChevronRight } from "lucide-react";
+import { LogOut, RefreshCw, Bell, Moon, ShieldCheck, ChevronRight, type LucideIcon } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { getCurrentProfile, clearCurrentProfile } from "@/lib/session";
+import { clearCurrentProfile } from "@/features/profile/session";
+import { useCurrentProfile } from "@/features/profile/hooks/useCurrentProfile";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 export default function Perfil() {
-  const profile = getCurrentProfile()!;
+  const { data: profile } = useCurrentProfile();
   const navigate = useNavigate();
 
   const logout = () => {
     clearCurrentProfile();
     navigate("/login", { replace: true });
   };
+
+  if (!profile) return null;
 
   return (
     <div>
@@ -102,7 +105,17 @@ function Row({ label, value, last }: { label: string; value: string; last?: bool
   );
 }
 
-function ToggleRow({ icon: Icon, label, defaultChecked, last }: { icon: any; label: string; defaultChecked?: boolean; last?: boolean }) {
+function ToggleRow({
+  icon: Icon,
+  label,
+  defaultChecked,
+  last,
+}: {
+  icon: LucideIcon;
+  label: string;
+  defaultChecked?: boolean;
+  last?: boolean;
+}) {
   return (
     <>
       <div className="flex items-center gap-3 px-4 py-3">

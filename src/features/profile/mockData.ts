@@ -1,0 +1,48 @@
+import type { StudentProfile } from "./schemas";
+
+export const profiles: StudentProfile[] = [
+  {
+    id: "u1",
+    name: "Ana Torres",
+    code: "20251234",
+    program: "Ingeniería de Sistemas",
+    semester: 1,
+    email: "ana.torres@uni.edu",
+    avatarColor: "bg-gradient-to-br from-rose-400 to-pink-500",
+    initials: "AT",
+    validUntil: "Dic 2026",
+  },
+  {
+    id: "u2",
+    name: "Carlos Méndez",
+    code: "20255678",
+    program: "Diseño Industrial",
+    semester: 1,
+    email: "carlos.mendez@uni.edu",
+    avatarColor: "bg-gradient-to-br from-sky-400 to-indigo-500",
+    initials: "CM",
+    validUntil: "Dic 2026",
+  },
+  {
+    id: "u3",
+    name: "Lucía Ramírez",
+    code: "20259876",
+    program: "Psicología",
+    semester: 1,
+    email: "lucia.ramirez@uni.edu",
+    avatarColor: "bg-gradient-to-br from-emerald-400 to-teal-500",
+    initials: "LR",
+    validUntil: "Dic 2026",
+  },
+  {
+    id: "u4",
+    name: "Diego Soto",
+    code: "20254321",
+    program: "Administración",
+    semester: 1,
+    email: "diego.soto@uni.edu",
+    avatarColor: "bg-gradient-to-br from-amber-400 to-orange-500",
+    initials: "DS",
+    validUntil: "Dic 2026",
+  },
+];
