@@ -4,16 +4,49 @@ export function buildNodeMap(buildings: Building[]) {
   return new Map(buildings.map(b => [b.id, b]));
 }
 
-export function getRouteLength(buildings: Building[], route: string[]) {
+/**
+ * Suma las distancias (en metros) de los segmentos de la ruta
+ * usando los valores precalculados en cada Route.
+ * Si no existe un Route para un segmento, cae al cálculo geométrico
+ * con el factor de escala correcto (×1000).
+ */
+export function getRouteLength(buildings: Building[], route: string[], routes?: Route[]) {
+  if (route.length < 2) return 0;
+
+  // Usar distancias precalculadas si se pasan las rutas
+  if (routes && routes.length > 0) {
+    let total = 0;
+    for (let i = 0; i < route.length - 1; i += 1) {
+      const seg = routes.find(
+        r =>
+          (r.from_id === route[i] && r.to_id === route[i + 1]) ||
+          (r.to_id === route[i] && r.from_id === route[i + 1])
+      );
+      if (seg) {
+        total += seg.distance;
+      } else {
+        // Fallback geométrico con escala correcta
+        const nodeMap = buildNodeMap(buildings);
+        const a = nodeMap.get(route[i]);
+        const b = nodeMap.get(route[i + 1]);
+        if (a && b) {
+          total += Math.round(Math.hypot(a.latitude - b.latitude, a.longitude - b.longitude) * 1000);
+        }
+      }
+    }
+    return total;
+  }
+
+  // Fallback: solo coordenadas, escala correcta (×1000)
   const nodeMap = buildNodeMap(buildings);
   let total = 0;
   for (let i = 0; i < route.length - 1; i += 1) {
     const a = nodeMap.get(route[i]);
     const b = nodeMap.get(route[i + 1]);
     if (!a || !b) continue;
-    total += Math.hypot(a.latitude - b.latitude, a.longitude - b.longitude);
+    total += Math.round(Math.hypot(a.latitude - b.latitude, a.longitude - b.longitude) * 1000);
   }
-  return Math.round(total * 0.45);
+  return total;
 }
 
 export function estimateWalkingTime(meters: number) {

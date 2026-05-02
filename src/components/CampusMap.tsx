@@ -10,9 +10,6 @@ interface CampusMapProps {
   centerCoords?: [number, number];
 }
 
-const MIN_ZOOM = 0.65;
-const MAX_ZOOM = 2.3;
-
 export default function CampusMap({
   buildings,
   routes,
@@ -23,26 +20,38 @@ export default function CampusMap({
 }: CampusMapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const [zoom, setZoom] = useState(1);
+  const backgroundRef = useRef<HTMLImageElement | null>(null);
+  const zoom = 1;
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [hovered, setHovered] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOrigin, setDragOrigin] = useState({ x: 0, y: 0 });
+  const [mapSize, setMapSize] = useState({ width: 1000, height: 900 });
+  const [calibrationMode, setCalibrationMode] = useState(false);
+  const [lastCoord, setLastCoord] = useState<{ x: number; y: number } | null>(null);
 
   const nodes = useMemo(() => {
     return buildings.map(b => ({
       id: b.id,
-      x: b.latitude,
-      y: b.longitude,
+      x: b.latitude * mapSize.width,
+      y: b.longitude * mapSize.height,
       radius: selectedBuilding === b.id ? 18 : 12,
       data: b,
     }));
-  }, [buildings, selectedBuilding]);
+  }, [buildings, mapSize, selectedBuilding]);
+
+  useEffect(() => {
+    const image = new Image();
+    image.src = "/mapa-poblado.jpg";
+    image.onload = () => {
+      backgroundRef.current = image;
+      setMapSize({ width: image.naturalWidth, height: image.naturalHeight });
+    };
+  }, []);
 
   useEffect(() => {
     if (!centerCoords) return;
     setPan({ x: 0, y: 0 });
-    setZoom(1);
   }, [centerCoords]);
 
   useEffect(() => {
@@ -71,22 +80,14 @@ export default function CampusMap({
   };
 
   const drawBackground = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+    const image = backgroundRef.current;
+    if (image) {
+      ctx.drawImage(image, 0, 0, width, height);
+      return;
+    }
+
     ctx.fillStyle = "#f8fafc";
     ctx.fillRect(0, 0, width, height);
-
-    ctx.fillStyle = "#e2e8f0";
-    ctx.fillRect(80, 70, width - 160, height - 140);
-
-    ctx.strokeStyle = "#cbd5f5";
-    ctx.lineWidth = 2;
-    ctx.setLineDash([8, 6]);
-    ctx.strokeRect(80, 70, width - 160, height - 140);
-    ctx.setLineDash([]);
-
-    ctx.fillStyle = "rgba(16, 185, 129, 0.18)";
-    ctx.beginPath();
-    ctx.ellipse(500, 420, 220, 140, 0, 0, Math.PI * 2);
-    ctx.fill();
   };
 
   const drawRoutes = (ctx: CanvasRenderingContext2D) => {
@@ -160,14 +161,24 @@ export default function CampusMap({
 
   const screenToCanvas = (clientX: number, clientY: number) => {
     const rect = canvasRef.current?.getBoundingClientRect();
+    const canvas = canvasRef.current;
     if (!rect) return { x: 0, y: 0 };
-    const x = (clientX - rect.left - pan.x) / zoom;
-    const y = (clientY - rect.top - pan.y) / zoom;
+    const scaleX = canvas ? canvas.width / rect.width : 1;
+    const scaleY = canvas ? canvas.height / rect.height : 1;
+    const x = ((clientX - rect.left) * scaleX - pan.x) / zoom;
+    const y = ((clientY - rect.top) * scaleY - pan.y) / zoom;
     return { x, y };
   };
 
   const handleClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
     const { x, y } = screenToCanvas(event.clientX, event.clientY);
+    if (calibrationMode) {
+      setLastCoord({
+        x: Math.max(0, Math.min(1, x / mapSize.width)),
+        y: Math.max(0, Math.min(1, y / mapSize.height)),
+      });
+      return;
+    }
     const hit = nodes.find(node => Math.hypot(x - node.x, y - node.y) <= node.radius + 4);
     if (hit) onBuildingSelect?.(hit.id);
   };
@@ -183,6 +194,12 @@ export default function CampusMap({
     const { x, y } = screenToCanvas(event.clientX, event.clientY);
     const hit = nodes.find(node => Math.hypot(x - node.x, y - node.y) <= node.radius + 6);
     setHovered(hit ? hit.id : null);
+    if (calibrationMode) {
+      setLastCoord({
+        x: Math.max(0, Math.min(1, x / mapSize.width)),
+        y: Math.max(0, Math.min(1, y / mapSize.height)),
+      });
+    }
   };
 
   const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {
@@ -194,26 +211,33 @@ export default function CampusMap({
     setIsDragging(false);
   };
 
-  const handleWheel = (event: React.WheelEvent<HTMLCanvasElement>) => {
-    event.preventDefault();
-    const delta = -event.deltaY * 0.001;
-    setZoom(prev => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, prev + delta)));
-  };
-
   return (
     <div ref={wrapperRef} className="relative h-full w-full rounded-2xl border border-border bg-muted/40">
       <canvas
         ref={canvasRef}
-        width={1000}
-        height={900}
+        width={mapSize.width}
+        height={mapSize.height}
         onClick={handleClick}
         onMouseMove={handleMouseMove}
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        onWheel={handleWheel}
         className="h-full w-full rounded-2xl"
       />
+      <div className="absolute right-3 top-3 flex items-center gap-2 rounded-full bg-background/90 px-3 py-1 text-xs font-semibold shadow-card">
+        <button
+          type="button"
+          onClick={() => setCalibrationMode(prev => !prev)}
+          className="rounded-full border border-border px-2 py-0.5"
+        >
+          {calibrationMode ? "Calibrando" : "Calibrar"}
+        </button>
+        {lastCoord && (
+          <span className="font-mono">
+            x:{lastCoord.x.toFixed(3)} y:{lastCoord.y.toFixed(3)}
+          </span>
+        )}
+      </div>
       {hovered && (
         <div className="pointer-events-none absolute left-3 top-3 rounded-full bg-background px-3 py-1 text-xs font-semibold shadow-card">
           {nodes.find(n => n.id === hovered)?.data.name}

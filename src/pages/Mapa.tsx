@@ -12,7 +12,7 @@ import SearchBar from "@/components/SearchBar";
 export default function Mapa() {
   const [params] = useSearchParams();
   const [origin, setOrigin] = useState<string>("ENT-001");
-  const [dest, setDest] = useState<string>(params.get("to") || "LIB-001");
+  const [dest, setDest] = useState<string>(params.get("to") || "P31");
   const [route, setRoute] = useState<string[]>([]);
   const [selectedBuilding, setSelectedBuilding] = useState<string | undefined>();
   const [search, setSearch] = useState("");
@@ -30,7 +30,7 @@ export default function Mapa() {
     setRoute(r);
   };
 
-  const meters = useMemo(() => getRouteLength(campusBuildings, route), [route]);
+  const meters = useMemo(() => getRouteLength(campusBuildings, route, campusRoutes), [route]);
   const minutes = estimateWalkingTime(meters);
 
   const selectedBuildingData = campusBuildings.find(b => b.id === selectedBuilding);
