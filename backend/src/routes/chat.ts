@@ -136,4 +136,32 @@ router.delete('/clear/all', requireAuth, async (req: Request, res: Response, nex
   }
 });
 
+/**
+ * POST /api/chat/test-rag
+ * Test RAG pipeline without auth (development only)
+ */
+router.post('/test-rag', async (req: Request, res: Response, next) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  try {
+    const { message } = req.body;
+    if (!message || message.trim().length === 0) {
+      throw new ValidationError('Message cannot be empty');
+    }
+    logger.info(`RAG Test: "${message}"`);
+    const ragResult = await RAGChainService.queryRAG(message, 'test-user');
+    res.json({
+      query: message,
+      answer: ragResult.answer,
+      sources: ragResult.sources,
+      sourcesCount: ragResult.sources.length,
+      tokens: ragResult.tokens,
+      model: ragResult.model,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

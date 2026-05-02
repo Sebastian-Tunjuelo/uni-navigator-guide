@@ -147,27 +147,24 @@ export class RAGChainService {
   ): Promise<{
     answer: string;
     sources: any[];
+    tokens: { prompt: number; completion: number; total: number } | null;
+    model: string | null;
   }> {
-    logger.info(
-      `RAG: Processing query for user ${userId}: "${userQuery}"`
-    );
+    logger.info(`RAG: Processing query for user ${userId}: "${userQuery}"`);
 
     try {
-      // WORKFLOW PATTERN: Step 1 - Retrieve relevant documents
       const documents = await RetrieverService.hybridSearch(userQuery, 3);
       const relevantDocuments = this.filterRelevantDocuments(documents, userQuery);
-      const finalDocuments = relevantDocuments.length > 0 ? relevantDocuments : documents;
-      logger.info(`RAG: Retrieved ${finalDocuments.length} documents`);
+      const finalDocuments = relevantDocuments.length > 0 ? relevantDocuments : [];
+      logger.info(`RAG: Retrieved ${finalDocuments.length} relevant documents`);
 
-      // WORKFLOW PATTERN: Step 2 - Format context
       const context = this.formatContext(finalDocuments);
+      const { answer, tokens, model } = await this.generateResponse(userQuery, context);
 
-      // WORKFLOW PATTERN: Step 3 - Generate response (placeholder)
-      const answer = await this.generateResponse(userQuery, context);
-
-      // WORKFLOW PATTERN: Step 4 - Return with sources
       return {
         answer,
+        tokens,
+        model,
         sources: finalDocuments.map((doc) => ({
           title: doc.title,
           content: doc.content ? `${doc.content.substring(0, 200)}...` : '',
@@ -180,6 +177,8 @@ export class RAGChainService {
       return {
         answer: 'Lo siento, no pude procesar tu pregunta. Intenta de nuevo.',
         sources: [],
+        tokens: null,
+        model: null,
       };
     }
   }
@@ -209,7 +208,19 @@ export class RAGChainService {
       return [];
     }
 
-    const normalizedQuery = userQuery.toLowerCase();
+    const normalizedQuery = userQuery.toLowerCase().trim();
+
+    // Detectar conversación casual — no buscar documentos
+    const casualPhrases = [
+      'hola', 'buenos días', 'buenas tardes', 'buenas noches', 'hey', 'hi',
+      'gracias', 'muchas gracias', 'ok', 'okay', 'perfecto', 'genial', 'excelente',
+      'entendido', 'de acuerdo', 'claro', 'sí', 'no', 'bye', 'adiós', 'chao',
+      'eres muy útil', 'eres genial', 'me ayudaste', 'qué bueno',
+    ];
+    if (casualPhrases.some(p => normalizedQuery.includes(p)) && normalizedQuery.length < 40) {
+      return [];
+    }
+
     if (normalizedQuery.includes('biblioteca')) {
       return documents.filter((doc) => {
         const title = String(doc.title || '').toLowerCase();
@@ -219,25 +230,10 @@ export class RAGChainService {
     }
 
     const stopWords = new Set([
-      'donde',
-      'queda',
-      'cual',
-      'horario',
-      'como',
-      'que',
-      'para',
-      'por',
-      'una',
-      'un',
-      'la',
-      'el',
-      'los',
-      'las',
-      'de',
-      'del',
-      'y',
-      'en',
-      'su',
+      'donde', 'queda', 'cual', 'horario', 'como', 'que', 'para', 'por',
+      'una', 'un', 'la', 'el', 'los', 'las', 'de', 'del', 'y', 'en', 'su',
+      'puedo', 'puedes', 'hay', 'tiene', 'tengo', 'necesito', 'quiero',
+      'favor', 'porfavor', 'ayuda', 'info', 'informacion',
     ]);
 
     const keywords = Array.from(
@@ -261,35 +257,85 @@ export class RAGChainService {
   }
 
   /**
-   * Generate response (placeholder - will use LLM API)
+   * Generate response using LLM with smart context handling
    */
-  private static async generateResponse(userQuery: string, context: string): Promise<string> {
+  private static async generateResponse(
+    userQuery: string,
+    context: string
+  ): Promise<{ answer: string; tokens: { prompt: number; completion: number; total: number } | null; model: string | null }> {
     logger.info('RAG: Generating response');
 
-    const systemPrompt =
-      'Eres un asistente de orientación universitaria. Responde en 2-3 frases, claro y amigable. '
-      + 'Usa solo la información del contexto, sin listar documentos ni repetir el contexto. '
-      + 'Si no hay datos suficientes, dilo y sugiere un siguiente paso.';
+    const hasContext = context !== 'No hay información disponible.';
+
+    const systemPrompt = `Eres UniBot, el asistente virtual de orientación universitaria para estudiantes de primer semestre.
+Tu personalidad: cálido, cercano, empático y útil — como un compañero mayor que ya conoce el campus.
+Responde SIEMPRE en español, de forma natural y conversacional.
+
+REGLAS según el tipo de mensaje:
+
+1. SALUDOS / CONVERSACIÓN CASUAL (hola, gracias, cómo estás, etc.):
+   → Responde de forma amigable y natural. Ofrece ayuda con el campus.
+
+2. PREGUNTAS SOBRE EL CAMPUS con contexto disponible:
+   → Usa la información del contexto para responder en 2-3 frases claras y directas.
+   → No repitas el contexto textualmente ni menciones "documentos".
+
+3. PREGUNTAS SOBRE EL CAMPUS sin contexto disponible:
+   → Admite que no tienes esa información específica.
+   → Sugiere alternativas concretas: secretaría, bienestar, portal estudiantil, etc.
+
+4. PREGUNTAS FUERA DEL CAMPUS (comida, agua, clima, temas personales, etc.):
+   → Reconoce brevemente la pregunta con humor o empatía.
+   → Redirige amablemente hacia lo que sí puedes ayudar del campus.
+   → Ejemplo: si piden agua → menciona dónde hay dispensadores o cafetería.
+
+5. NUNCA respondas con listas de documentos, IDs, ni repitas el contexto crudo.`;
+
+    const userContent = hasContext
+      ? `Mensaje del estudiante: "${userQuery}"\n\nInformación relevante del campus:\n${context}`
+      : `Mensaje del estudiante: "${userQuery}"`;
+
     const messages = [
       { role: 'system' as const, content: systemPrompt },
-      {
-        role: 'user' as const,
-        content: `Pregunta: ${userQuery}\n\nContexto:\n${context}`,
-      },
+      { role: 'user' as const, content: userContent },
     ];
 
-    const completion = await LLMService.generateChatCompletion(messages, 0.2);
-    if (completion) {
-      return completion;
+    const result = await LLMService.generateChatCompletion(messages, 0.5);
+    if (result) {
+      logger.info(`RAG: Tokens used — prompt: ${result.tokens?.prompt}, completion: ${result.tokens?.completion}, total: ${result.tokens?.total}`);
+      return { answer: result.content, tokens: result.tokens, model: result.model };
     }
 
-    logger.warn('RAG: LLM unavailable, returning concise fallback');
-    const firstLine = context.split('\n').find((line) => line.trim().length > 0) || '';
-    if (firstLine) {
-      const cleaned = firstLine.replace(/^\[\d+\]\s*/, '');
-      return `${cleaned}. ¿Quieres más detalles?`;
+    // Fallback sin LLM — respuesta contextual según el tipo de pregunta
+    logger.warn('RAG: LLM unavailable, returning contextual fallback');
+    if (hasContext) {
+      const firstLine = context.split('\n').find((line) => line.trim().length > 0) || '';
+      const cleaned = firstLine.replace(/^\[\d+\]\s*[^:]+:\s*/, '');
+      return {
+        answer: cleaned ? `${cleaned.substring(0, 200)}...` : 'No encontré información específica sobre eso. Puedes consultar en secretaría o bienestar universitario.',
+        tokens: null,
+        model: null,
+      };
     }
 
-    return 'No encontré información suficiente sobre eso. ¿Puedes darme más contexto?';
+    const q = userQuery.toLowerCase();
+    let answer: string;
+    if (/agua|sed|beber|tomar/.test(q)) {
+      answer = 'Para agua, puedes ir a la **Cafetería Principal** o a los dispensadores en los pasillos de cada bloque. 💧';
+    } else if (/hambre|comer|almuerzo|comida|cafeteria|cafetería/.test(q)) {
+      answer = 'La **Cafetería Principal** está cerca de la plaza central, abierta de 7:00 a 19:00 con menú estudiantil. 🍽️';
+    } else if (/perdido|perdida|donde|dónde|ubicacion|ubicación|llegar/.test(q)) {
+      answer = 'Usa la pestaña **Mapa** de la app para orientarte. También puedes preguntarme por cualquier edificio o servicio específico. 🗺️';
+    } else if (/ansioso|ansiosa|estres|estrés|nervioso|nerviosa|triste|mal|agobiado/.test(q)) {
+      answer = 'Entiendo que el primer semestre puede ser intenso. 💙 El **Centro de Bienestar Estudiantil** (Bloque B, piso 2) ofrece apoyo psicológico gratuito — puedes acercarte sin cita previa.';
+    } else if (/hola|buenos|buenas|hey|qué tal|como estas|cómo estás/.test(q)) {
+      answer = '¡Hola! 👋 Estoy aquí para ayudarte con todo lo del campus. Pregúntame sobre horarios, ubicaciones, trámites o servicios.';
+    } else if (/gracias|thank|perfecto|genial|excelente/.test(q)) {
+      answer = '¡Con gusto! 😊 Si necesitas algo más sobre el campus, aquí estoy.';
+    } else {
+      answer = 'Esa pregunta está un poco fuera de mi área, pero puedo ayudarte con todo lo relacionado al campus: horarios, ubicaciones, trámites y servicios universitarios. ¿Qué necesitas?';
+    }
+
+    return { answer, tokens: null, model: null };
   }
 }

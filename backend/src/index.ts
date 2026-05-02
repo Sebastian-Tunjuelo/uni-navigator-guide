@@ -26,7 +26,7 @@ app.use((req: Request, res: Response, next) => {
 // CORS
 app.use(
   cors({
-    origin: ['http://localhost:5173', 'http://localhost:3000'], // Frontend URLs
+    origin: ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:8080'], // Frontend URLs
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -117,3 +117,4 @@ process.on('uncaughtException', (err) => {
 startServer();
 
 export default app;
+
