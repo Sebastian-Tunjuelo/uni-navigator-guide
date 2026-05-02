@@ -3,7 +3,7 @@ import { Bot, Send, Sparkles, Zap, WifiOff } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { cn } from "@/lib/utils";
 
-const BACKEND_URL = "http://localhost:3001";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
 
 const SUGGESTIONS = [
   "¿Dónde queda la biblioteca?",

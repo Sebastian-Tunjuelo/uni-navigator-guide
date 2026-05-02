@@ -1,7 +1,11 @@
 import dotenv from 'dotenv';
+import path from 'path';
 
-// Load environment variables from .env.local
-dotenv.config({ path: '.env.local' });
+// In production (Render), env vars are injected directly.
+// In development, load from .env.local
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+}
 
 export const config = {
   // Server
