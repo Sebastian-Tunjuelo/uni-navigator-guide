@@ -8,7 +8,7 @@ Node.js + Express.js + TypeScript backend para la aplicación de orientación un
 - **Framework**: Express.js 5.x
 - **Language**: TypeScript
 - **Database**: PostgreSQL (Supabase)
-- **Auth**: Supabase Auth
+- **Auth**: Flujo preparado, pero el frontend usa login simulado
 - **Logging**: Pino
 - **CORS**: habilitado para localhost:5173 (frontend)
 
@@ -75,7 +75,7 @@ backend/
 │   │   ├── health.ts         # GET /api/health
 │   │   ├── auth.ts           # POST /api/auth/*
 │   │   ├── chat.ts           # POST /api/chat/*
-│   │   └── campus.ts         # GET/POST /api/campus/*
+│   │   └── campus.ts         # GET /api/campus/*
 │   ├── services/
 │   │   ├── auth.service.ts   # Lógica de autenticación
 │   │   ├── chat.service.ts   # Lógica de chat
@@ -97,21 +97,26 @@ backend/
 ## API Endpoints
 
 ### Health Check
+
 - `GET /api/health` - Verifica que el servidor está vivo
 
 ### Autenticación
+
 - `POST /api/auth/signup` - Registro (email, password)
 - `POST /api/auth/login` - Login (email, password)
 - `POST /api/auth/logout` - Logout (requiere token)
 - `GET /api/auth/me` - Usuario actual (requiere token)
 
 ### Chat
+
 - `POST /api/chat/message` - Enviar mensaje (requiere token)
 - `GET /api/chat/history` - Historial de chat (requiere token)
 - `DELETE /api/chat/:messageId` - Eliminar mensaje (requiere token)
 - `DELETE /api/chat/clear/all` - Limpiar historial (requiere token)
 
 ### Campus
+
+- `GET /api/campus/routes` - Todas las rutas del campus
 - `GET /api/campus/buildings` - Lista de edificios
 - `GET /api/campus/buildings/:id` - Edificio por ID
 - `GET /api/campus/buildings/category/:category` - Edificios por categoría
@@ -120,6 +125,10 @@ backend/
 - `POST /api/campus/bookmark` - Guardar favorito (requiere token)
 - `DELETE /api/campus/bookmark/:buildingId` - Eliminar favorito (requiere token)
 - `GET /api/campus/bookmarks` - Mis favoritos (requiere token)
+
+### Nota de acceso
+
+- El frontend todavía no usa un login real; el acceso es con perfiles simulados y sesión local.
 
 ## Autenticación
 
@@ -144,6 +153,7 @@ El servidor retorna errores en formato JSON:
 ```
 
 Códigos de estado HTTP:
+
 - `200` - OK
 - `201` - Created
 - `400` - Bad Request (validación)
@@ -156,6 +166,7 @@ Códigos de estado HTTP:
 Pino registra todos los eventos. En desarrollo, usa `pino-pretty` para formato legible.
 
 Niveles:
+
 - `debug` - Información detallada
 - `info` - Eventos importantes
 - `warn` - Advertencias
@@ -186,6 +197,7 @@ Response to Client
 ```
 
 **Ventajas:**
+
 - Cada operación es una "activity" (idempotente)
 - La lógica de coordinación es clara (en servicios)
 - Fácil migración a Temporal si se escala

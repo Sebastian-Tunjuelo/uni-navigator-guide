@@ -28,10 +28,12 @@ export default function CampusMap({
   const [dragOrigin, setDragOrigin] = useState({ x: 0, y: 0 });
   const [mapSize, setMapSize] = useState({ width: 1000, height: 900 });
   const [calibrationMode, setCalibrationMode] = useState(false);
-  const [lastCoord, setLastCoord] = useState<{ x: number; y: number } | null>(null);
+  const [lastCoord, setLastCoord] = useState<{ x: number; y: number } | null>(
+    null,
+  );
 
   const nodes = useMemo(() => {
-    return buildings.map(b => ({
+    return buildings.map((b) => ({
       id: b.id,
       x: b.latitude * mapSize.width,
       y: b.longitude * mapSize.height,
@@ -79,7 +81,11 @@ export default function CampusMap({
     ctx.restore();
   };
 
-  const drawBackground = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+  const drawBackground = (
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number,
+  ) => {
     const image = backgroundRef.current;
     if (image) {
       ctx.drawImage(image, 0, 0, width, height);
@@ -91,23 +97,33 @@ export default function CampusMap({
   };
 
   const drawRoutes = (ctx: CanvasRenderingContext2D) => {
-    routes.forEach(route => {
-      const from = nodes.find(n => n.id === route.from_id);
-      const to = nodes.find(n => n.id === route.to_id);
+    routes.forEach((route) => {
+      const from = nodes.find((n) => n.id === route.from_id);
+      const to = nodes.find((n) => n.id === route.to_id);
       if (!from || !to) return;
       ctx.beginPath();
       ctx.moveTo(from.x, from.y);
       ctx.lineTo(to.x, to.y);
-      ctx.strokeStyle = "rgba(100, 116, 139, 0.35)";
-      ctx.lineWidth = route.type === "covered" ? 3 : 2;
-      ctx.setLineDash(route.type === "shortcuts" ? [6, 6] : []);
+      ctx.strokeStyle =
+        route.type === "recommended"
+          ? "rgba(37, 99, 235, 0.55)"
+          : route.type === "shuttle"
+            ? "rgba(15, 23, 42, 0.42)"
+            : "rgba(100, 116, 139, 0.35)";
+      ctx.lineWidth =
+        route.type === "covered" || route.type === "shuttle" ? 3 : 2;
+      ctx.setLineDash(
+        route.type === "shortcuts" || route.type === "recommended"
+          ? [6, 6]
+          : [],
+      );
       ctx.stroke();
       ctx.setLineDash([]);
     });
   };
 
   const drawBuildings = (ctx: CanvasRenderingContext2D) => {
-    nodes.forEach(node => {
+    nodes.forEach((node) => {
       const isSelected = selectedBuilding === node.id;
       const isHovered = hovered === node.id;
 
@@ -118,7 +134,13 @@ export default function CampusMap({
 
       ctx.beginPath();
       ctx.fillStyle = node.data.color || "#3b82f6";
-      ctx.arc(node.x, node.y, node.radius + (isHovered ? 2 : 0), 0, Math.PI * 2);
+      ctx.arc(
+        node.x,
+        node.y,
+        node.radius + (isHovered ? 2 : 0),
+        0,
+        Math.PI * 2,
+      );
       ctx.fill();
 
       if (isSelected || isHovered) {
@@ -143,7 +165,7 @@ export default function CampusMap({
   const drawSelectedRoute = (ctx: CanvasRenderingContext2D) => {
     if (!selectedRoute || selectedRoute.length < 2) return;
     const points = selectedRoute
-      .map(id => nodes.find(n => n.id === id))
+      .map((id) => nodes.find((n) => n.id === id))
       .filter(Boolean) as typeof nodes;
     if (points.length < 2) return;
 
@@ -179,7 +201,9 @@ export default function CampusMap({
       });
       return;
     }
-    const hit = nodes.find(node => Math.hypot(x - node.x, y - node.y) <= node.radius + 4);
+    const hit = nodes.find(
+      (node) => Math.hypot(x - node.x, y - node.y) <= node.radius + 4,
+    );
     if (hit) onBuildingSelect?.(hit.id);
   };
 
@@ -192,7 +216,9 @@ export default function CampusMap({
       return;
     }
     const { x, y } = screenToCanvas(event.clientX, event.clientY);
-    const hit = nodes.find(node => Math.hypot(x - node.x, y - node.y) <= node.radius + 6);
+    const hit = nodes.find(
+      (node) => Math.hypot(x - node.x, y - node.y) <= node.radius + 6,
+    );
     setHovered(hit ? hit.id : null);
     if (calibrationMode) {
       setLastCoord({
@@ -212,7 +238,10 @@ export default function CampusMap({
   };
 
   return (
-    <div ref={wrapperRef} className="relative h-full w-full rounded-2xl border border-border bg-muted/40">
+    <div
+      ref={wrapperRef}
+      className="relative h-full w-full rounded-2xl border border-border bg-muted/40"
+    >
       <canvas
         ref={canvasRef}
         width={mapSize.width}
@@ -227,7 +256,7 @@ export default function CampusMap({
       <div className="absolute right-3 top-3 flex items-center gap-2 rounded-full bg-background/90 px-3 py-1 text-xs font-semibold shadow-card">
         <button
           type="button"
-          onClick={() => setCalibrationMode(prev => !prev)}
+          onClick={() => setCalibrationMode((prev) => !prev)}
           className="rounded-full border border-border px-2 py-0.5"
         >
           {calibrationMode ? "Calibrando" : "Calibrar"}
@@ -240,7 +269,7 @@ export default function CampusMap({
       </div>
       {hovered && (
         <div className="pointer-events-none absolute left-3 top-3 rounded-full bg-background px-3 py-1 text-xs font-semibold shadow-card">
-          {nodes.find(n => n.id === hovered)?.data.name}
+          {nodes.find((n) => n.id === hovered)?.data.name}
         </div>
       )}
     </div>

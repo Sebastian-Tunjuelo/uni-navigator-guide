@@ -32,7 +32,7 @@ PATRONES DOCUMENTADOS Y ENCONTRADOS
    - src/components/layout/     -> PageHeader, MobileShell, BottomNav
    - src/pages/                 -> Home, Mapa, Carnet, Chats, Perfil, Login
    - src/lib/                   -> utils.ts, session.ts
-   - src/data/                  -> mock.ts, campus.ts
+  - src/data/                  -> mock.ts, campus-extended.ts
    
    Convenciones:
    - PascalCase:  Componentes (PageHeader, MapBlock, CardItem)
@@ -216,7 +216,7 @@ Hooks y Utilidades:
 - src/hooks/use-toast.ts  -> Hook de notificaciones
 
 Datos y Lógica:
-- src/data/campus.ts      -> Grafo del campus con Dijkstra
+- src/data/campus-extended.ts -> Grafo local de respaldo del campus
 - src/data/mock.ts        -> Datos de prueba
 
 Páginas:
@@ -243,7 +243,7 @@ CONCLUSIONES Y RECOMENDACIONES
 
 3. PROXIMAMENTE:
    - Crear MapBlock, MapControls, MapLegend
-   - Integrar con findRoute() del campus.ts
+  - Integrar con findRoute() del campus-extended.ts
    - Animar rutas con draw-route keyframe
    - Agregar interactividad con onClick
    - Mantener consistencia con BottomNav

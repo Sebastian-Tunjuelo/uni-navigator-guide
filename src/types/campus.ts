@@ -9,7 +9,12 @@ export type BuildingCategory =
   | "food"
   | "entrance";
 
-export type RouteType = "walking" | "covered" | "shortcuts";
+export type RouteType =
+  | "walking"
+  | "covered"
+  | "shortcuts"
+  | "shuttle"
+  | "recommended";
 
 export interface Building {
   id: string;

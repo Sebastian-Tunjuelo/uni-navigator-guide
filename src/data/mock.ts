@@ -15,7 +15,7 @@ export interface StudentProfile {
 export const profiles: StudentProfile[] = [
   {
     id: "u1",
-    name: "Ana Torres",
+    name: "Laura Torres",
     code: "20251234",
     program: "Ingeniería de Sistemas",
     semester: 1,
@@ -71,10 +71,46 @@ export interface ClassEntry {
 }
 
 export const todayClasses: ClassEntry[] = [
-  { id: "c1", subject: "Cálculo I", room: "Aula 302", block: "B", start: "08:00", end: "10:00", day: 1, color: "bg-primary-soft text-primary" },
-  { id: "c2", subject: "Programación", room: "Lab 105", block: "C", start: "10:30", end: "12:30", day: 1, color: "bg-success-soft text-success" },
-  { id: "c3", subject: "Inglés Técnico", room: "Aula 210", block: "A", start: "14:00", end: "15:30", day: 1, color: "bg-warning-soft text-warning" },
-  { id: "c4", subject: "Comunicación", room: "Aula 401", block: "D", start: "16:00", end: "17:30", day: 1, color: "bg-accent text-accent-foreground" },
+  {
+    id: "c1",
+    subject: "Cálculo I",
+    room: "Aula 302",
+    block: "B",
+    start: "08:00",
+    end: "10:00",
+    day: 1,
+    color: "bg-primary-soft text-primary",
+  },
+  {
+    id: "c2",
+    subject: "Programación",
+    room: "Lab 105",
+    block: "C",
+    start: "10:30",
+    end: "12:30",
+    day: 1,
+    color: "bg-success-soft text-success",
+  },
+  {
+    id: "c3",
+    subject: "Inglés Técnico",
+    room: "Aula 210",
+    block: "A",
+    start: "14:00",
+    end: "15:30",
+    day: 1,
+    color: "bg-warning-soft text-warning",
+  },
+  {
+    id: "c4",
+    subject: "Comunicación",
+    room: "Aula 401",
+    block: "D",
+    start: "16:00",
+    end: "17:30",
+    day: 1,
+    color: "bg-accent text-accent-foreground",
+  },
 ];
 
 export interface Activity {
@@ -184,5 +220,3 @@ export const news: NewsItem[] = [
     emoji: "🌿",
   },
 ];
-
-

@@ -8,6 +8,8 @@ http://localhost:3001/api
 
 ## Authentication
 
+> Nota: el proyecto usa un login simulado en frontend por ahora. Esta sección documenta el backend preparado para cuando se active autenticación real.
+
 Las rutas protegidas requieren un JWT token en el header `Authorization`:
 
 ```
@@ -21,9 +23,11 @@ El token se obtiene del endpoint `/api/auth/login` o `/api/auth/signup`.
 ## Health Check
 
 ### GET /health
+
 Verifica que el servidor está vivo y conectado a Supabase.
 
 **Response (200)**
+
 ```json
 {
   "status": "healthy",
@@ -38,9 +42,11 @@ Verifica que el servidor está vivo y conectado a Supabase.
 ## Authentication
 
 ### POST /auth/signup
+
 Registra un nuevo usuario.
 
 **Request**
+
 ```json
 {
   "email": "laura@example.com",
@@ -49,6 +55,7 @@ Registra un nuevo usuario.
 ```
 
 **Response (201)**
+
 ```json
 {
   "message": "User created successfully",
@@ -67,9 +74,11 @@ Registra un nuevo usuario.
 ---
 
 ### POST /auth/login
+
 Inicia sesión con credenciales.
 
 **Request**
+
 ```json
 {
   "email": "laura@example.com",
@@ -78,6 +87,7 @@ Inicia sesión con credenciales.
 ```
 
 **Response (200)**
+
 ```json
 {
   "message": "Logged in successfully",
@@ -95,9 +105,11 @@ Inicia sesión con credenciales.
 ---
 
 ### POST /auth/logout
+
 Cierra la sesión del usuario. **Requiere autenticación.**
 
 **Response (200)**
+
 ```json
 {
   "message": "Logged out successfully"
@@ -107,9 +119,11 @@ Cierra la sesión del usuario. **Requiere autenticación.**
 ---
 
 ### GET /auth/me
+
 Obtiene información del usuario actual. **Requiere autenticación.**
 
 **Response (200)**
+
 ```json
 {
   "user": {
@@ -126,9 +140,11 @@ Obtiene información del usuario actual. **Requiere autenticación.**
 ## Chat
 
 ### POST /chat/message
+
 Envía un mensaje al chatbot. **Requiere autenticación.**
 
 **Request**
+
 ```json
 {
   "message": "¿Dónde está la biblioteca?"
@@ -136,6 +152,7 @@ Envía un mensaje al chatbot. **Requiere autenticación.**
 ```
 
 **Response (201)**
+
 ```json
 {
   "id": "uuid",
@@ -155,12 +172,15 @@ Envía un mensaje al chatbot. **Requiere autenticación.**
 ---
 
 ### GET /chat/history
+
 Obtiene el historial de chat del usuario. **Requiere autenticación.**
 
 **Query Parameters**
+
 - `limit` (optional, default: 50, max: 500) - Número de mensajes a recuperar
 
 **Response (200)**
+
 ```json
 {
   "count": 5,
@@ -179,9 +199,11 @@ Obtiene el historial de chat del usuario. **Requiere autenticación.**
 ---
 
 ### DELETE /chat/:messageId
+
 Elimina un mensaje del historial. **Requiere autenticación.**
 
 **Response (200)**
+
 ```json
 {
   "message": "Message deleted successfully"
@@ -191,9 +213,11 @@ Elimina un mensaje del historial. **Requiere autenticación.**
 ---
 
 ### DELETE /chat/clear/all
+
 Limpia todo el historial de chat del usuario. **Requiere autenticación.**
 
 **Response (200)**
+
 ```json
 {
   "message": "Chat history cleared successfully"
@@ -204,10 +228,38 @@ Limpia todo el historial de chat del usuario. **Requiere autenticación.**
 
 ## Campus (Mapa)
 
+### GET /campus/routes
+
+Obtiene todas las rutas del campus para visualización y cálculos de navegación.
+
+**Response (200)**
+
+```json
+{
+  "count": 42,
+  "routes": [
+    {
+      "id": "uuid",
+      "from_id": "uuid",
+      "to_id": "uuid",
+      "distance": 120,
+      "type": "walking",
+      "duration": 2,
+      "waypoints": [
+        [0, 0],
+        [1, 1]
+      ]
+    }
+  ]
+}
+```
+
 ### GET /campus/buildings
+
 Obtiene lista de todos los edificios.
 
 **Response (200)**
+
 ```json
 {
   "count": 25,
@@ -217,7 +269,7 @@ Obtiene lista de todos los edificios.
       "name": "Biblioteca Central",
       "description": "Edificio principal con 5 pisos...",
       "category": "service",
-      "latitude": 4.7110,
+      "latitude": 4.711,
       "longitude": -74.0721,
       "color": "#3b82f6",
       "floor": 5,
@@ -230,22 +282,25 @@ Obtiene lista de todos los edificios.
 ---
 
 ### GET /campus/buildings/:id
+
 Obtiene información de un edificio específico.
 
 **Response (200)**
+
 ```json
 {
   "id": "uuid",
   "name": "Biblioteca Central",
   "description": "Edificio principal con 5 pisos...",
   "category": "service",
-  "latitude": 4.7110,
+  "latitude": 4.711,
   "longitude": -74.0721,
   "color": "#3b82f6"
 }
 ```
 
 **Response (404)**
+
 ```json
 {
   "error": "Building not found",
@@ -256,12 +311,15 @@ Obtiene información de un edificio específico.
 ---
 
 ### GET /campus/buildings/category/:category
+
 Obtiene edificios por categoría.
 
 **Path Parameters**
+
 - `category` - `academic`, `service`, `residence`, o `sport`
 
 **Response (200)**
+
 ```json
 {
   "category": "service",
@@ -273,13 +331,16 @@ Obtiene edificios por categoría.
 ---
 
 ### GET /campus/routes/:from/:to
+
 Obtiene la ruta entre dos edificios.
 
 **Path Parameters**
+
 - `from` - ID del edificio de origen
 - `to` - ID del edificio de destino
 
 **Response (200)**
+
 ```json
 {
   "id": "uuid",
@@ -288,21 +349,27 @@ Obtiene la ruta entre dos edificios.
   "distance": 250,
   "type": "walking",
   "duration": 5,
-  "waypoints": [[4.71, -74.07], [4.712, -74.072]]
+  "waypoints": [
+    [4.71, -74.07],
+    [4.712, -74.072]
+  ]
 }
 ```
 
 ---
 
 ### GET /campus/nearby
+
 Obtiene edificios cercanos a una ubicación.
 
 **Query Parameters**
+
 - `lat` (required) - Latitud
 - `lng` (required) - Longitud
 - `radius` (optional, default: 1) - Radio en km
 
 **Response (200)**
+
 ```json
 {
   "location": {
@@ -318,9 +385,11 @@ Obtiene edificios cercanos a una ubicación.
 ---
 
 ### POST /campus/bookmark
+
 Agrega un edificio a favoritos del usuario. **Requiere autenticación.**
 
 **Request**
+
 ```json
 {
   "buildingId": "uuid"
@@ -328,6 +397,7 @@ Agrega un edificio a favoritos del usuario. **Requiere autenticación.**
 ```
 
 **Response (201)**
+
 ```json
 {
   "message": "Building bookmarked successfully",
@@ -343,9 +413,11 @@ Agrega un edificio a favoritos del usuario. **Requiere autenticación.**
 ---
 
 ### DELETE /campus/bookmark/:buildingId
+
 Elimina un edificio de favoritos. **Requiere autenticación.**
 
 **Response (200)**
+
 ```json
 {
   "message": "Bookmark removed successfully"
@@ -355,9 +427,11 @@ Elimina un edificio de favoritos. **Requiere autenticación.**
 ---
 
 ### GET /campus/bookmarks
+
 Obtiene los favoritos del usuario. **Requiere autenticación.**
 
 **Response (200)**
+
 ```json
 {
   "count": 3,
@@ -387,12 +461,12 @@ Todos los errores siguen este formato:
 
 ### Error Status Codes
 
-| Code | Meaning | Example |
-|------|---------|---------|
-| 400 | Bad Request - Validation error | Missing required field |
-| 401 | Unauthorized - Invalid/missing token | Invalid JWT |
-| 404 | Not Found - Resource doesn't exist | Building ID not found |
-| 500 | Server Error | Database connection error |
+| Code | Meaning                              | Example                   |
+| ---- | ------------------------------------ | ------------------------- |
+| 400  | Bad Request - Validation error       | Missing required field    |
+| 401  | Unauthorized - Invalid/missing token | Invalid JWT               |
+| 404  | Not Found - Resource doesn't exist   | Building ID not found     |
+| 500  | Server Error                         | Database connection error |
 
 ---
 
@@ -438,6 +512,7 @@ curl -X POST http://localhost:3001/api/campus/bookmark \
 ## CORS
 
 El servidor está configurado para aceptar requests desde:
+
 - `http://localhost:5173` (Vite dev server)
 - `http://localhost:3000` (alternate)
 

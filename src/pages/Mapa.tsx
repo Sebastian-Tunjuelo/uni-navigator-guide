@@ -3,41 +3,154 @@ import { useSearchParams } from "react-router-dom";
 import { Clock, Footprints } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { campusBuildings, campusRoutes } from "@/data/campus-extended";
-import { findRoute, getRouteLength, estimateWalkingTime } from "@/utils/campus-helpers";
+import {
+  findRoute,
+  getRouteLength,
+  estimateWalkingTime,
+} from "@/utils/campus-helpers";
 import CampusMap from "@/components/CampusMap";
 import BuildingInfo from "@/components/BuildingInfo";
 import RouteFinder from "@/components/RouteFinder";
 import SearchBar from "@/components/SearchBar";
+import type { Building, Route } from "@/types/campus";
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
+
+function normalizeBuilding(building: {
+  id: string;
+  name: string;
+  description?: string | null;
+  category: Building["category"];
+  latitude: number;
+  longitude: number;
+  icon?: string | null;
+  color?: string | null;
+}): Building {
+  return {
+    id: building.id,
+    name: building.name,
+    shortName:
+      building.name.length <= 8 ? building.name : building.name.split(" ")[0],
+    description: building.description || building.name,
+    category: building.category,
+    latitude: building.latitude,
+    longitude: building.longitude,
+    icon: building.icon || "📍",
+    color: building.color || "#0ea5e9",
+  };
+}
+
+function normalizeRoute(route: {
+  id: string;
+  from_id: string;
+  to_id: string;
+  distance: number;
+  type: Route["type"];
+  duration: number;
+  waypoints?: [number, number][] | null;
+}): Route {
+  return {
+    id: route.id,
+    from_id: route.from_id,
+    to_id: route.to_id,
+    distance: route.distance,
+    type: route.type,
+    duration: route.duration,
+    waypoints: route.waypoints || undefined,
+  };
+}
 
 export default function Mapa() {
   const [params] = useSearchParams();
   const [origin, setOrigin] = useState<string>("ENT-001");
   const [dest, setDest] = useState<string>(params.get("to") || "P31");
   const [route, setRoute] = useState<string[]>([]);
-  const [selectedBuilding, setSelectedBuilding] = useState<string | undefined>();
+  const [selectedBuilding, setSelectedBuilding] = useState<
+    string | undefined
+  >();
   const [search, setSearch] = useState("");
+  const [mapBuildings, setMapBuildings] = useState<Building[]>(campusBuildings);
+  const [mapRoutes, setMapRoutes] = useState<Route[]>(campusRoutes);
+  const [sourceLabel, setSourceLabel] = useState<"local" | "backend">("local");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCampusData() {
+      try {
+        const [buildingsRes, routesRes] = await Promise.all([
+          fetch(`${BACKEND_URL}/api/campus/buildings`),
+          fetch(`${BACKEND_URL}/api/campus/routes`),
+        ]);
+
+        if (!buildingsRes.ok || !routesRes.ok) {
+          throw new Error("Campus API unavailable");
+        }
+
+        const buildingsJson = await buildingsRes.json();
+        const routesJson = await routesRes.json();
+        const backendBuildings = (buildingsJson.buildings || []).map(
+          normalizeBuilding,
+        );
+        const backendRoutes = (routesJson.routes || []).map(normalizeRoute);
+
+        if (cancelled) return;
+
+        if (backendBuildings.length > 0 && backendRoutes.length > 0) {
+          setMapBuildings(backendBuildings);
+          setMapRoutes(backendRoutes);
+          setSourceLabel("backend");
+          if (!backendBuildings.some((b) => b.id === origin)) {
+            setOrigin(backendBuildings[0].id);
+          }
+          if (!backendBuildings.some((b) => b.id === dest)) {
+            setDest(backendBuildings[0].id);
+          }
+          return;
+        }
+
+        throw new Error("Empty campus API response");
+      } catch {
+        if (cancelled) return;
+        setMapBuildings(campusBuildings);
+        setMapRoutes(campusRoutes);
+        setSourceLabel("local");
+      }
+    }
+
+    void loadCampusData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Auto-trace if destination came from URL
   useEffect(() => {
     if (params.get("to")) {
-      const r = findRoute(campusBuildings, campusRoutes, origin, params.get("to")!);
+      const r = findRoute(mapBuildings, mapRoutes, origin, params.get("to")!);
       setRoute(r);
     }
-  }, []); // eslint-disable-line
+  }, [params, origin, mapBuildings, mapRoutes]);
 
   const handleTrace = () => {
-    const r = findRoute(campusBuildings, campusRoutes, origin, dest);
+    const r = findRoute(mapBuildings, mapRoutes, origin, dest);
     setRoute(r);
   };
 
-  const meters = useMemo(() => getRouteLength(campusBuildings, route, campusRoutes), [route]);
+  const meters = useMemo(
+    () => getRouteLength(mapBuildings, route, mapRoutes),
+    [route, mapBuildings, mapRoutes],
+  );
   const minutes = estimateWalkingTime(meters);
 
-  const selectedBuildingData = campusBuildings.find(b => b.id === selectedBuilding);
+  const selectedBuildingData = mapBuildings.find(
+    (b) => b.id === selectedBuilding,
+  );
   const hasRoute = route.length > 1;
   const stepsText = route
     .map((id, i) => {
-      const b = campusBuildings.find(item => item.id === id);
+      const b = mapBuildings.find((item) => item.id === id);
       if (!b) return null;
       if (i === 0) return `Sal de ${b.shortName}`;
       if (i === route.length - 1) return `Llega a ${b.shortName}`;
@@ -45,7 +158,7 @@ export default function Mapa() {
     })
     .filter(Boolean) as string[];
 
-  const filteredBuildings = campusBuildings.filter(building => {
+  const filteredBuildings = mapBuildings.filter((building) => {
     if (!search.trim()) return true;
     const term = search.toLowerCase();
     return (
@@ -56,12 +169,23 @@ export default function Mapa() {
 
   return (
     <div className="flex min-h-[calc(100vh-5.5rem)] flex-col">
-      <PageHeader title="Mapa del campus" subtitle="Navega por un campus 2D interactivo" />
+      <PageHeader
+        title="Mapa del campus"
+        subtitle="Navega por un campus 2D interactivo"
+      />
 
       <div className="space-y-3 border-b border-border bg-background px-4 py-3">
-        <SearchBar value={search} onChange={setSearch} placeholder="Buscar edificio" />
+        <SearchBar
+          value={search}
+          onChange={setSearch}
+          placeholder="Buscar edificio"
+        />
+        <div className="px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          Fuente del mapa:{" "}
+          {sourceLabel === "backend" ? "backend /api/campus" : "respaldo local"}
+        </div>
         <RouteFinder
-          buildings={campusBuildings}
+          buildings={mapBuildings}
           origin={origin}
           destination={dest}
           onOriginChange={setOrigin}
@@ -74,7 +198,7 @@ export default function Mapa() {
         <div className="min-h-[360px] flex-1">
           <CampusMap
             buildings={filteredBuildings}
-            routes={campusRoutes}
+            routes={mapRoutes}
             selectedBuilding={selectedBuilding}
             selectedRoute={route}
             onBuildingSelect={setSelectedBuilding}
@@ -86,7 +210,12 @@ export default function Mapa() {
           onNavigate={() => {
             if (!selectedBuilding) return;
             setDest(selectedBuilding);
-            const r = findRoute(campusBuildings, campusRoutes, origin, selectedBuilding);
+            const r = findRoute(
+              mapBuildings,
+              mapRoutes,
+              origin,
+              selectedBuilding,
+            );
             setRoute(r);
           }}
         />
@@ -96,11 +225,15 @@ export default function Mapa() {
         <div className="mx-3 mb-4 rounded-2xl border border-border bg-card p-4 shadow-card animate-fade-in">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-primary">Ruta recomendada</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                Ruta recomendada
+              </p>
               <p className="mt-0.5 text-sm font-semibold">
-                {campusBuildings.find(b => b.id === route[0])?.shortName} →
-                {" "}
-                {campusBuildings.find(b => b.id === route[route.length - 1])?.shortName}
+                {mapBuildings.find((b) => b.id === route[0])?.shortName} →{" "}
+                {
+                  mapBuildings.find((b) => b.id === route[route.length - 1])
+                    ?.shortName
+                }
               </p>
             </div>
             <div className="flex items-center gap-2 text-xs">

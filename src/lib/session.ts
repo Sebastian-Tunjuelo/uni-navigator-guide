@@ -2,10 +2,10 @@ import { profiles, type StudentProfile } from "@/data/mock";
 
 const KEY = "uniguia.profileId";
 
-export function getCurrentProfile(): StudentProfile | null {
+export function getCurrentProfile(): StudentProfile {
   const id = localStorage.getItem(KEY);
-  if (!id) return null;
-  return profiles.find(p => p.id === id) || null;
+  if (!id) return profiles[0];
+  return profiles.find((p) => p.id === id) || profiles[0];
 }
 
 export function setCurrentProfile(id: string) {

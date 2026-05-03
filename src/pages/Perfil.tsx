@@ -1,5 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { LogOut, RefreshCw, Bell, Moon, ShieldCheck, ChevronRight } from "lucide-react";
+import {
+  LogOut,
+  RefreshCw,
+  Bell,
+  Moon,
+  ShieldCheck,
+  ChevronRight,
+} from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { getCurrentProfile, clearCurrentProfile } from "@/lib/session";
 import { Switch } from "@/components/ui/switch";
@@ -20,10 +27,12 @@ export default function Perfil() {
       <div className="space-y-5 px-4 py-5">
         {/* Header de perfil */}
         <div className="flex flex-col items-center text-center">
-          <div className={cn(
-            "flex h-20 w-20 items-center justify-center rounded-full text-2xl font-bold text-white shadow-elevated",
-            profile.avatarColor
-          )}>
+          <div
+            className={cn(
+              "flex h-20 w-20 items-center justify-center rounded-full text-2xl font-bold text-white shadow-elevated",
+              profile.avatarColor,
+            )}
+          >
             {profile.initials}
           </div>
           <h2 className="mt-3 text-lg font-bold">{profile.name}</h2>
@@ -51,13 +60,18 @@ export default function Perfil() {
           <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
             <ToggleRow icon={Bell} label="Notificaciones" defaultChecked />
             <ToggleRow icon={Moon} label="Tema oscuro" />
-            <ToggleRow icon={ShieldCheck} label="Privacidad reforzada" defaultChecked last />
+            <ToggleRow
+              icon={ShieldCheck}
+              label="Privacidad reforzada"
+              defaultChecked
+              last
+            />
           </div>
         </section>
 
         {/* Acciones */}
         <section>
-          <p className="label-eyebrow mb-2 px-1">Cuenta</p>
+          <p className="label-eyebrow mb-2 px-1">Cuenta demo</p>
           <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
             <button
               onClick={logout}
@@ -66,7 +80,9 @@ export default function Perfil() {
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-soft text-primary">
                 <RefreshCw className="h-4 w-4" />
               </div>
-              <span className="flex-1 text-sm font-medium">Cambiar de usuario</span>
+              <span className="flex-1 text-sm font-medium">
+                Cambiar de perfil demo
+              </span>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             </button>
             <div className="h-px bg-border" />
@@ -77,20 +93,28 @@ export default function Perfil() {
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-destructive/10">
                 <LogOut className="h-4 w-4" />
               </div>
-              <span className="flex-1 text-sm font-medium">Cerrar sesión</span>
+              <span className="flex-1 text-sm font-medium">Salir del demo</span>
             </button>
           </div>
         </section>
 
         <p className="pb-4 pt-2 text-center text-[11px] text-muted-foreground">
-          UniGuía v1.0 · App demo
+          UniGuía v1.0 · Acceso simulado
         </p>
       </div>
     </div>
   );
 }
 
-function Row({ label, value, last }: { label: string; value: string; last?: boolean }) {
+function Row({
+  label,
+  value,
+  last,
+}: {
+  label: string;
+  value: string;
+  last?: boolean;
+}) {
   return (
     <>
       <div className="flex items-center justify-between gap-3 px-4 py-3">
@@ -102,7 +126,17 @@ function Row({ label, value, last }: { label: string; value: string; last?: bool
   );
 }
 
-function ToggleRow({ icon: Icon, label, defaultChecked, last }: { icon: any; label: string; defaultChecked?: boolean; last?: boolean }) {
+function ToggleRow({
+  icon: Icon,
+  label,
+  defaultChecked,
+  last,
+}: {
+  icon: any;
+  label: string;
+  defaultChecked?: boolean;
+  last?: boolean;
+}) {
   return (
     <>
       <div className="flex items-center gap-3 px-4 py-3">

@@ -1,6 +1,7 @@
 # Tareas Mapa 2D - Virtual University Concierge
 
 ## Objetivo
+
 Implementar un mapa interactivo 2D del campus universitario mostrando edificios como nodos y caminos/rutas como aristas, con capacidad de búsqueda, navegación y overlay de imagen del campus.
 
 ---
@@ -8,35 +9,37 @@ Implementar un mapa interactivo 2D del campus universitario mostrando edificios 
 ## FASE 1: Diseño y Estructuras de Datos
 
 ### Tarea 1.1: Definir estructura de datos del campus
+
 - [ ] Crear tipos TypeScript para:
+
   ```typescript
   interface Building {
     id: string;
     name: string;
     description: string;
-    category: 'academic' | 'service' | 'residence' | 'sport';
-    latitude: number;    // coordenadas relativas al mapa (0-1000px)
+    category: "academic" | "service" | "residence" | "sport";
+    latitude: number; // coordenadas relativas al mapa (0-1000px)
     longitude: number;
     icon?: string;
-    color?: string;      // color del nodo
+    color?: string; // color del nodo
     floor?: number;
   }
 
   interface Route {
     id: string;
-    from_id: string;     // building id
+    from_id: string; // building id
     to_id: string;
-    distance: number;    // metros
-    type: 'walking' | 'shuttle' | 'recommended';
-    duration: number;    // minutos
+    distance: number; // metros
+    type: "walking" | "shuttle" | "recommended";
+    duration: number; // minutos
     waypoints?: [number, number][]; // puntos intermedios
   }
 
   interface MapNode {
     id: string;
-    x: number;          // píxeles en canvas
+    x: number; // píxeles en canvas
     y: number;
-    radius: number;     // tamaño del nodo
+    radius: number; // tamaño del nodo
     data: Building;
   }
 
@@ -48,38 +51,41 @@ Implementar un mapa interactivo 2D del campus universitario mostrando edificios 
   ```
 
 ### Tarea 1.2: Crear archivo seed de campus
+
 - [ ] Crear `src/data/campus-data.ts` con:
   - Array de 20-30 edificios
   - Array de rutas entre edificios
   - Coordenadas realistas (o normalizadas 0-1000)
 - [ ] Ejemplo:
+
   ```typescript
   export const campusBuildings: Building[] = [
     {
-      id: 'lib-001',
-      name: 'Biblioteca Central',
-      description: 'Edificio principal con 5 pisos de libros',
-      category: 'service',
+      id: "lib-001",
+      name: "Biblioteca Central",
+      description: "Edificio principal con 5 pisos de libros",
+      category: "service",
       latitude: 250,
       longitude: 300,
-      color: '#3b82f6'
+      color: "#3b82f6",
     },
     // ... más edificios
   ];
 
   export const campusRoutes: Route[] = [
     {
-      id: 'route-001',
-      from_id: 'lib-001',
-      to_id: 'aca-001',
+      id: "route-001",
+      from_id: "lib-001",
+      to_id: "aca-001",
       distance: 150,
-      duration: 3
-    }
+      duration: 3,
+    },
     // ... más rutas
   ];
   ```
 
 ### Tarea 1.3: Preparar imagen del campus
+
 - [ ] Obtener/crear imagen del campus (plano 2D)
 - [ ] Guardar en `public/campus-map.png`
 - [ ] Redimensionar a 1000x1000px (o similar)
@@ -90,12 +96,14 @@ Implementar un mapa interactivo 2D del campus universitario mostrando edificios 
 ## FASE 2: Componente React del Mapa
 
 ### Tarea 2.1: Crear componente principal `CampusMap`
+
 - [ ] Crear `src/components/CampusMap.tsx`:
   - Canvas o SVG para renderizar
   - Props: buildings, routes, selectedBuilding, onBuildingSelect
   - Estado local: zoom, pan, hovered node
 
 **Estructura base:**
+
 ```typescript
 interface CampusMapProps {
   buildings: Building[];
@@ -138,14 +146,16 @@ export function CampusMap({
 ```
 
 ### Tarea 2.2: Renderizar imagen de fondo
+
 - [ ] En canvas, dibujar imagen del campus
 - [ ] Usar `drawImage()` de canvas
 - [ ] Aplicar transformaciones (zoom/pan)
 
 **Pseudocódigo:**
+
 ```typescript
 const drawMap = () => {
-  const ctx = canvasRef.current?.getContext('2d');
+  const ctx = canvasRef.current?.getContext("2d");
   if (!ctx) return;
 
   // Limpiar canvas
@@ -172,15 +182,17 @@ const drawMap = () => {
 ```
 
 ### Tarea 2.3: Renderizar aristas (rutas)
+
 - [ ] Dibujar líneas entre nodos
 - [ ] Color según tipo de ruta (walking, shuttle, etc.)
 - [ ] Espesor según importancia
 - [ ] Opcional: mostrar distancia en la línea
 
 **Pseudocódigo:**
+
 ```typescript
 const drawRoutes = (ctx: CanvasRenderingContext2D) => {
-  routes.forEach(route => {
+  routes.forEach((route) => {
     const fromNode = nodes[route.from_id];
     const toNode = nodes[route.to_id];
 
@@ -195,6 +207,7 @@ const drawRoutes = (ctx: CanvasRenderingContext2D) => {
 ```
 
 ### Tarea 2.4: Renderizar nodos (edificios)
+
 - [ ] Dibujar círculos para edificios
 - [ ] Color según categoría
 - [ ] Tamaño dinámico si es seleccionado
@@ -202,28 +215,29 @@ const drawRoutes = (ctx: CanvasRenderingContext2D) => {
 - [ ] Hover effect
 
 **Pseudocódigo:**
+
 ```typescript
 const drawBuildings = (ctx: CanvasRenderingContext2D) => {
-  buildings.forEach(building => {
+  buildings.forEach((building) => {
     const node = nodes[building.id];
     const isSelected = selectedBuilding === building.id;
     const radius = isSelected ? 20 : 15;
 
     // Sombra
-    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+    ctx.fillStyle = "rgba(0,0,0,0.2)";
     ctx.beginPath();
     ctx.arc(node.x, node.y, radius + 2, 0, Math.PI * 2);
     ctx.fill();
 
     // Círculo principal
-    ctx.fillStyle = building.color || '#3b82f6';
+    ctx.fillStyle = building.color || "#3b82f6";
     ctx.beginPath();
     ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
     ctx.fill();
 
     // Borde si está seleccionado
     if (isSelected) {
-      ctx.strokeStyle = '#000';
+      ctx.strokeStyle = "#000";
       ctx.lineWidth = 2;
       ctx.stroke();
     }
@@ -236,12 +250,14 @@ const drawBuildings = (ctx: CanvasRenderingContext2D) => {
 ## FASE 3: Interactividad del Mapa
 
 ### Tarea 3.1: Click en nodos
+
 - [ ] Detectar click en nodo
 - [ ] Resaltar nodo seleccionado
 - [ ] Mostrar información en sidebar
 - [ ] Callback `onBuildingSelect`
 
 **Pseudocódigo:**
+
 ```typescript
 const handleCanvasClick = (e: React.MouseEvent) => {
   const rect = canvasRef.current?.getBoundingClientRect();
@@ -249,7 +265,7 @@ const handleCanvasClick = (e: React.MouseEvent) => {
   const y = (e.clientY - rect!.top - pan.y) / zoom;
 
   // Verificar si clickeó en algún nodo
-  buildings.forEach(building => {
+  buildings.forEach((building) => {
     const node = nodes[building.id];
     const dist = Math.sqrt((x - node.x) ** 2 + (y - node.y) ** 2);
     if (dist <= node.radius) {
@@ -260,17 +276,20 @@ const handleCanvasClick = (e: React.MouseEvent) => {
 ```
 
 ### Tarea 3.2: Hover en nodos
+
 - [ ] Mostrar tooltip con nombre del edificio
 - [ ] Cambiar cursor a pointer
 - [ ] Highlight suave del nodo
 
 ### Tarea 3.3: Zoom y Pan
+
 - [ ] Rueda del mouse para zoom
 - [ ] Drag para pan/movimiento
 - [ ] Límites de zoom (0.5x - 3x)
 - [ ] Animación suave (opcional)
 
 **Pseudocódigo:**
+
 ```typescript
 const handleWheel = (e: React.WheelEvent) => {
   e.preventDefault();
@@ -285,18 +304,19 @@ const handleMouseDown = (e: React.MouseEvent) => {
   const handleMouseMove = (moveE: MouseEvent) => {
     setPan({
       x: moveE.clientX - startX,
-      y: moveE.clientY - startY
+      y: moveE.clientY - startY,
     });
   };
 
-  document.addEventListener('mousemove', handleMouseMove);
-  document.addEventListener('mouseup', () => {
-    document.removeEventListener('mousemove', handleMouseMove);
+  document.addEventListener("mousemove", handleMouseMove);
+  document.addEventListener("mouseup", () => {
+    document.removeEventListener("mousemove", handleMouseMove);
   });
 };
 ```
 
 ### Tarea 3.4: Búsqueda de edificios
+
 - [ ] Input de búsqueda
 - [ ] Filter por nombre/descripción
 - [ ] Auto-centra mapa en resultado
@@ -307,34 +327,36 @@ const handleMouseDown = (e: React.MouseEvent) => {
 ## FASE 4: Rutas y Navegación
 
 ### Tarea 4.1: Componente `RouteFinder`
+
 - [ ] Input: "Desde" y "Hacia" (building selects)
 - [ ] Botón calcular ruta
 - [ ] Mostrar ruta en mapa (resaltar nodos + aristas)
 - [ ] Mostrar distancia total y duración
 
 **Pseudocódigo:**
+
 ```typescript
 const handleFindRoute = async (fromId: string, toId: string) => {
-  const response = await fetch(
-    `/api/campus/routes/${fromId}/${toId}`
-  );
+  const response = await fetch(`/api/campus/routes/${fromId}/${toId}`);
   const route = await response.json();
-  
+
   setSelectedRoute({
     path: route.waypoints,
     distance: route.distance,
-    duration: route.duration
+    duration: route.duration,
   });
 };
 ```
 
 ### Tarea 4.2: Renderizar ruta calculada
+
 - [ ] Dibujar línea destacada en mapa
 - [ ] Color diferenciado (e.g., amarillo)
 - [ ] Mostrar números de pasos
 - [ ] Animación opcional (seguimiento)
 
 ### Tarea 4.3: Dirección paso a paso
+
 - [ ] Mostrar lista de pasos (giro a izquierda en edificio X, etc.)
 - [ ] Highlight del siguiente paso
 - [ ] Modo "siguiendo" (centra mapa en usuario)
@@ -344,6 +366,7 @@ const handleFindRoute = async (fromId: string, toId: string) => {
 ## FASE 5: Sidebar de Información
 
 ### Tarea 5.1: Crear componente `BuildingInfo`
+
 - [ ] Props: building info, route info
 - [ ] Mostrar cuando hay nodo seleccionado:
   - Nombre del edificio
@@ -357,6 +380,7 @@ const handleFindRoute = async (fromId: string, toId: string) => {
   - Pasos de navegación
 
 **Estructura:**
+
 ```typescript
 <div className="sidebar">
   {selectedBuilding && <BuildingCard building={selectedBuilding} />}
@@ -365,6 +389,7 @@ const handleFindRoute = async (fromId: string, toId: string) => {
 ```
 
 ### Tarea 5.2: Favoritos/Bookmarks
+
 - [ ] Botón "guardar favorito"
 - [ ] Agregar a lista de favoritos del usuario
 - [ ] Mostrar acceso rápido a favoritos
@@ -375,6 +400,7 @@ const handleFindRoute = async (fromId: string, toId: string) => {
 ## FASE 6: Estilos y UX
 
 ### Tarea 6.1: Usar shadcn + Tailwind
+
 - [ ] Integrar con componentes shadcn:
   - Input para búsqueda
   - Select para edificios
@@ -383,11 +409,13 @@ const handleFindRoute = async (fromId: string, toId: string) => {
 - [ ] Paleta de colores consistente
 
 ### Tarea 6.2: Responsive design
+
 - [ ] Mapa responsive en mobile
 - [ ] Sidebar colapsable en pantallas pequeñas
 - [ ] Touch events para mapa en mobile
 
 ### Tarea 6.3: Dark mode
+
 - [ ] Adaptación de colores a dark mode
 - [ ] Contraste suficiente en canvas
 
@@ -396,18 +424,21 @@ const handleFindRoute = async (fromId: string, toId: string) => {
 ## FASE 7: Optimizaciones
 
 ### Tarea 7.1: Rendimiento del canvas
+
 - [ ] Caché de imágenes
 - [ ] Redraw inteligente (solo cambios)
 - [ ] RequestAnimationFrame para animaciones
 - [ ] Lazy loading de ruta
 
 ### Tarea 7.2: Funciones avanzadas (opcional)
+
 - [ ] Búsqueda de edificios cercanos (geolocalización)
 - [ ] Vista satelital/3D (futuro)
 - [ ] Planificación de clase a clase (cronograma)
 - [ ] Compartir ruta (link/QR)
 
 ### Tarea 7.3: Accesibilidad
+
 - [ ] Descripciones ARIA
 - [ ] Navegación por teclado
 - [ ] Alto contraste
@@ -417,11 +448,13 @@ const handleFindRoute = async (fromId: string, toId: string) => {
 ## FASE 8: Testing
 
 ### Tarea 8.1: Unit tests
+
 - [ ] Test cálculo de rutas
 - [ ] Test detección de clicks en nodos
 - [ ] Test rendering de componentes
 
 ### Tarea 8.2: E2E tests
+
 - [ ] Test flujo completo: buscar edificio → ver ruta → navegar
 
 ---
@@ -447,7 +480,7 @@ src/utils/
 └── campus-helpers.ts          # Lógica específica campus
 
 src/data/
-├── campus-data.ts             # Edificios y rutas
+├── campus-extended.ts         # Edificios y rutas de respaldo
 └── colors.ts                  # Paleta de colores
 
 src/types/
@@ -486,7 +519,7 @@ src/types/
 - [ ] Responsive en mobile
 - [ ] Dark mode funciona
 - [ ] Tests pasando
-- [ ] Integrado con backend (`/api/campus/*`)
+- [ ] Integrado con backend (`/api/campus/*`) cuando la semilla esté disponible
 
 ---
 
@@ -494,30 +527,29 @@ src/types/
 
 ```typescript
 // Contexto 2D del canvas
-const ctx = canvas.getContext('2d');
+const ctx = canvas.getContext("2d");
 
 // Dibujar línea
 ctx.beginPath();
 ctx.moveTo(x1, y1);
 ctx.lineTo(x2, y2);
-ctx.strokeStyle = '#000';
+ctx.strokeStyle = "#000";
 ctx.lineWidth = 2;
 ctx.stroke();
 
 // Dibujar círculo
 ctx.beginPath();
 ctx.arc(x, y, radius, 0, Math.PI * 2);
-ctx.fillStyle = '#3b82f6';
+ctx.fillStyle = "#3b82f6";
 ctx.fill();
 
 // Dibujar texto
-ctx.fillStyle = '#000';
-ctx.font = '12px Arial';
-ctx.fillText('Edificio', x, y);
+ctx.fillStyle = "#000";
+ctx.font = "12px Arial";
+ctx.fillText("Edificio", x, y);
 
 // Transformaciones
-ctx.translate(x, y);    // Mover origen
-ctx.scale(zoom, zoom);  // Escalar
-ctx.rotate(angle);      // Rotar
+ctx.translate(x, y); // Mover origen
+ctx.scale(zoom, zoom); // Escalar
+ctx.rotate(angle); // Rotar
 ```
-

@@ -33,20 +33,21 @@ uni-navigator-guide/
 │   │   ├── Carnet.tsx          # Carnet estudiantil
 │   │   ├── Perfil.tsx          # Perfil del usuario
 │   │   └── Login.tsx           # Autenticación
-│   ├── data/                   # Datos del campus
-│   │   ├── campus.ts           # Nodos/aristas (SVG simple)
-│   │   ├── campus-extended.ts  # Dataset completo con coordenadas reales
-│   │   └── campus-map-visual.ts
+│   ├── data/                   # Datos del campus de respaldo
+│   │   ├── campus-extended.ts  # Grafo local para el mapa actual
+│   │   └── campus-extended.test.ts
 │   ├── utils/                  # Helpers
 │   │   ├── campus-helpers.ts   # findRoute, getRouteLength, estimateWalkingTime
 │   │   └── campus-utils.ts
 │   ├── types/campus.ts         # Tipos Building, Route
-│   └── integrations/supabase/ # Cliente Supabase frontend
+│   └── integrations/supabase/  # Cliente Supabase frontend
 │
 ├── backend/                    # Backend — Node.js + Express
 │   ├── src/
 │   │   ├── config/             # env, logger, supabase
 │   │   ├── middleware/         # auth, errorHandler
+│   │   ├── routes/             # health, auth, chat, campus
+│   │   ├── services/           # auth, chat, campus, rag
 │   │   ├── types/              # Tipos compartidos
 │   │   └── scripts/            # generate-campus-pdf, ingest-pdf
 │   ├── data/
@@ -73,73 +74,79 @@ uni-navigator-guide/
 ## Stack Tecnológico
 
 ### Frontend
-| Tecnología | Versión | Uso |
-|---|---|---|
-| React | 18.3 | UI framework |
-| TypeScript | 5.8 | Tipado estático |
-| Vite | 5.4 | Build tool |
-| Tailwind CSS | 3.4 | Estilos |
-| shadcn/ui | latest | Componentes accesibles |
-| React Router | 6.30 | Navegación SPA |
-| TanStack Query | 5.83 | Server state |
-| Supabase JS | 2.105 | Cliente DB/Auth |
-| Recharts | 2.15 | Gráficas |
-| Lucide React | 0.462 | Iconos |
+
+| Tecnología     | Versión | Uso                    |
+| -------------- | ------- | ---------------------- |
+| React          | 18.3    | UI framework           |
+| TypeScript     | 5.8     | Tipado estático        |
+| Vite           | 5.4     | Build tool             |
+| Tailwind CSS   | 3.4     | Estilos                |
+| shadcn/ui      | latest  | Componentes accesibles |
+| React Router   | 6.30    | Navegación SPA         |
+| TanStack Query | 5.83    | Server state           |
+| Supabase JS    | 2.105   | Cliente DB/Auth        |
+| Recharts       | 2.15    | Gráficas               |
+| Lucide React   | 0.462   | Iconos                 |
 
 ### Backend
-| Tecnología | Versión | Uso |
-|---|---|---|
-| Node.js | 18+ | Runtime |
-| Express | 5.2 | HTTP server |
-| TypeScript | 6.0 | Tipado estático |
-| Supabase JS | 2.105 | DB client |
-| Axios | 1.15 | HTTP requests a LLMs |
-| Pino | 10.3 | Logging estructurado |
-| PDFKit | 0.18 | Generación de PDFs |
-| pdf-parse | 1.1.1 | Lectura de PDFs |
+
+| Tecnología  | Versión | Uso                  |
+| ----------- | ------- | -------------------- |
+| Node.js     | 18+     | Runtime              |
+| Express     | 5.2     | HTTP server          |
+| TypeScript  | 6.0     | Tipado estático      |
+| Supabase JS | 2.105   | DB client            |
+| Axios       | 1.15    | HTTP requests a LLMs |
+| Pino        | 10.3    | Logging estructurado |
+| PDFKit      | 0.18    | Generación de PDFs   |
+| pdf-parse   | 1.1.1   | Lectura de PDFs      |
 
 ### Base de Datos (Supabase / PostgreSQL)
-| Tabla | Descripción |
-|---|---|
-| `documents` | Chunks del PDF con embeddings vectoriales (RAG) |
-| `chat_messages` | Historial de conversaciones con UniBot |
-| `usuarios` | Usuarios del sistema |
-| `productos` | (Proyecto anterior — no usar) |
+
+| Tabla           | Descripción                                     |
+| --------------- | ----------------------------------------------- |
+| `documents`     | Chunks del PDF con embeddings vectoriales (RAG) |
+| `chat_messages` | Historial de conversaciones con UniBot          |
+| `usuarios`      | Usuarios del sistema                            |
+| `productos`     | (Proyecto anterior — no usar)                   |
 
 ### IA / LLM
-| Servicio | Uso |
-|---|---|
-| Gemini 2.5 Flash | Chat principal (LLM) |
+
+| Servicio             | Uso                               |
+| -------------------- | --------------------------------- |
+| Gemini 2.5 Flash     | Chat principal (LLM)              |
 | Gemini embedding-001 | Embeddings vectoriales (768 dims) |
-| Groq llama-3.3-70b | Fallback ultra-rápido |
-| Supabase pgvector | Búsqueda semántica |
+| Groq llama-3.3-70b   | Fallback ultra-rápido             |
+| Supabase pgvector    | Búsqueda semántica                |
 
 ---
 
 ## Páginas y Rutas
 
-| Ruta | Componente | Descripción |
-|---|---|---|
-| `/` | `Home` | Dashboard: materias, accesos rápidos |
-| `/mapa` | `Mapa` | Mapa interactivo del campus |
-| `/chats` | `Chats` | Lista de conversaciones |
-| `/chats/bot` | `BotChat` | Chat con UniBot (RAG) |
-| `/chats/grupo` | `GroupChat` | Chat grupal de estudiantes |
-| `/carnet` | `Carnet` | Carnet estudiantil digital |
-| `/perfil` | `Perfil` | Perfil del usuario |
-| `/asignatura/:id` | `SubjectDetail` | Detalle de materia |
+| Ruta              | Componente      | Descripción                          |
+| ----------------- | --------------- | ------------------------------------ |
+| `/`               | `Home`          | Dashboard: materias, accesos rápidos |
+| `/mapa`           | `Mapa`          | Mapa interactivo del campus          |
+| `/chats`          | `Chats`         | Lista de conversaciones              |
+| `/chats/bot`      | `BotChat`       | Chat con UniBot (RAG)                |
+| `/chats/grupo`    | `GroupChat`     | Chat grupal de estudiantes           |
+| `/carnet`         | `Carnet`        | Carnet estudiantil digital           |
+| `/perfil`         | `Perfil`        | Perfil del usuario                   |
+| `/asignatura/:id` | `SubjectDetail` | Detalle de materia                   |
 
 ---
 
 ## Variables de Entorno
 
 ### Frontend (`.env` en raíz)
+
 ```env
 VITE_SUPABASE_URL=https://...supabase.co
 VITE_SUPABASE_ANON_KEY=eyJ...
 ```
 
 ### Backend (`backend/.env.local`)
+
 ```env
 VITE_SUPABASE_URL=https://...supabase.co
 VITE_SUPABASE_ANON_KEY=eyJ...
@@ -160,6 +167,7 @@ GROQ_CHAT_MODEL=llama-3.3-70b-versatile
 ## Cómo Ejecutar
 
 ### Frontend
+
 ```bash
 npm install
 npm run dev        # http://localhost:5173
@@ -168,6 +176,7 @@ npm run test       # Tests con Vitest
 ```
 
 ### Backend
+
 ```bash
 cd backend
 npm install
@@ -216,15 +225,15 @@ El proyecto ya usa Supabase para auth y DB. Agregar pgvector evita introducir un
 
 ## Estado Actual del Proyecto
 
-| Feature | Estado |
-|---|---|
-| Mapa interactivo 2D | ✅ Implementado |
-| Búsqueda de edificios | ✅ Implementado |
-| Cálculo de rutas (Dijkstra) | ✅ Implementado |
-| Chat con UniBot | ✅ Implementado |
-| RAG con PDF del campus | ✅ Implementado |
-| Embeddings semánticos | ✅ Activo (18 chunks en Supabase) |
-| Chat grupal | ✅ UI implementada |
-| Carnet estudiantil | ✅ Implementado |
-| Tests | 🔄 Parcial (Vitest configurado) |
-| Deploy producción | ⏳ Pendiente |
+| Feature                     | Estado                            |
+| --------------------------- | --------------------------------- |
+| Mapa interactivo 2D         | ✅ Implementado                   |
+| Búsqueda de edificios       | ✅ Implementado                   |
+| Cálculo de rutas (Dijkstra) | ✅ Implementado                   |
+| Chat con UniBot             | ✅ Implementado                   |
+| RAG con PDF del campus      | ✅ Implementado                   |
+| Embeddings semánticos       | ✅ Activo (18 chunks en Supabase) |
+| Chat grupal                 | ✅ UI implementada                |
+| Carnet estudiantil          | ✅ Implementado                   |
+| Tests                       | 🔄 Parcial (Vitest configurado)   |
+| Deploy producción           | ⏳ Pendiente                      |
