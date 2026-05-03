@@ -5,7 +5,7 @@
 | Field       | Info                                                                            |
 | ----------- | ------------------------------------------------------------------------------- |
 | **Project** | Virtual University Concierge                                                    |
-| **Team**    | Natalia Urbano Tovar, Sebastian Tunjuelo Lujan, Jerson Ramirez, Alfonso Ralacio |
+| **Team**    | Natalia Urbano Tovar, Sebastian Tunjuelo Lujan, Jerson Ramirez, Alfonso Palacio |
 | **Program** | EPAM 2026                                                                       |
 | **Date**    | April 30, 2026                                                                  |
 
